@@ -51,4 +51,5 @@ Free means it's part of the core that stays free forever. Paid means it goes in 
 - Auto-pause for phone and internet calls, auto-resume after (no phone permission needed)
 - After-call summary in the app, notification and naming box
 - Multi-select (long press): share, export or delete several at once
-- Export as AAC or WAV to any folder (Downloads, SD card, Drive, USB) via the system folder picker
+- Export as M4A (default), AAC or WAV to any folder (Downloads, SD card, Drive, USB) via the system folder picker
+- Share as M4A for compatibility; offers a smaller speech-quality copy over 20 MB (email limits)

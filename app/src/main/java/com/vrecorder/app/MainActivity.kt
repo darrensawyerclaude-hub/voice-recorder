@@ -108,7 +108,10 @@ class MainActivity : ComponentActivity() {
     // Recordings waiting for an export format, then for a folder.
     private var exportRequest by mutableStateOf<List<Recording>?>(null)
     private var pendingExport: Pair<List<Recording>, ExportFormat>? = null
-    private var exportProgress by mutableStateOf<Pair<Int, Int>?>(null)
+    // Long-running work in progress: a title ("Exporting") and (done, total).
+    private var busy by mutableStateOf<Pair<String, Pair<Int, Int>>?>(null)
+    // Recordings too big for email, waiting for "smaller copy" or "full quality".
+    private var shareSizeRequest by mutableStateOf<List<Recording>?>(null)
     private var query by mutableStateOf("")
     private var sortOrder by mutableStateOf(SortOrder.NEWEST)
     private var showHelp by mutableStateOf(false)
@@ -162,11 +165,13 @@ class MainActivity : ComponentActivity() {
                     nameRequest?.let { NameDialog(it) }
                     deleteRequest?.let { DeleteDialog(it) }
                     exportRequest?.let { ExportDialog(it) }
-                    exportProgress?.let { (done, total) ->
+                    shareSizeRequest?.let { ShareSizeDialog(it) }
+                    busy?.let { (title, progress) ->
+                        val (done, total) = progress
                         AlertDialog(
                             onDismissRequest = {},
-                            title = { Text("Exporting") },
-                            text = { Text("${min(done + 1, total)} of $total…") },
+                            title = { Text(title) },
+                            text = { Text(if (total > 1) "${min(done + 1, total)} of $total…" else "One moment…") },
                             confirmButton = {},
                         )
                     }
@@ -225,12 +230,38 @@ class MainActivity : ComponentActivity() {
         playingUri = null
     }
 
-    private fun share(rec: Recording) {
-        val send = Intent(Intent.ACTION_SEND)
-            .setType("audio/aac")
-            .putExtra(Intent.EXTRA_STREAM, rec.uri)
-            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        startActivity(Intent.createChooser(send, rec.name))
+    /** Shares as M4A. Above typical email limits, first offers a smaller speech-quality copy. */
+    private fun share(recs: List<Recording>) {
+        if (recs.isEmpty()) return
+        if (recs.sumOf { it.sizeBytes } > EMAIL_LIMIT_BYTES) shareSizeRequest = recs
+        else sendShare(recs, small = false)
+    }
+
+    private fun sendShare(recs: List<Recording>, small: Boolean) {
+        shareSizeRequest = null
+        busy = "Preparing" to (0 to recs.size)
+        lifecycleScope.launch {
+            val uris = runCatching {
+                Exporter.prepareForSharing(this@MainActivity, recs, small) { done, total -> busy = "Preparing" to (done to total) }
+            }.getOrNull()
+            busy = null
+            if (uris == null) {
+                Toast.makeText(this@MainActivity, "Couldn't prepare the file to share.", Toast.LENGTH_LONG).show()
+                return@launch
+            }
+            val send = if (uris.size == 1) {
+                Intent(Intent.ACTION_SEND).putExtra(Intent.EXTRA_STREAM, uris[0])
+            } else {
+                Intent(Intent.ACTION_SEND_MULTIPLE).putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
+            }
+            send.setType("audio/mp4").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            // ClipData carries the read permission for every file, not just the first.
+            send.clipData = android.content.ClipData.newRawUri(null, uris[0]).apply {
+                uris.drop(1).forEach { addItem(android.content.ClipData.Item(it)) }
+            }
+            selected = emptySet()
+            startActivity(Intent.createChooser(send, if (uris.size == 1) recs[0].name.removeSuffix(".aac") else "Share ${uris.size} recordings"))
+        }
     }
 
     private fun openWith(rec: Recording) {
@@ -266,20 +297,6 @@ class MainActivity : ComponentActivity() {
         Toast.makeText(this, "Open your file manager and go to $path", Toast.LENGTH_LONG).show()
     }
 
-    private fun shareMany(recs: List<Recording>) {
-        if (recs.size == 1) return share(recs[0])
-        val uris = ArrayList(recs.map { it.uri })
-        val send = Intent(Intent.ACTION_SEND_MULTIPLE)
-            .setType("audio/aac")
-            .putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        // ClipData carries the read permission for every file, not just the first.
-        send.clipData = android.content.ClipData.newRawUri(null, uris[0]).apply {
-            uris.drop(1).forEach { addItem(android.content.ClipData.Item(it)) }
-        }
-        startActivity(Intent.createChooser(send, "Share ${recs.size} recordings"))
-    }
-
     private fun chooseExportFolder(recs: List<Recording>, format: ExportFormat) {
         exportRequest = null
         pendingExport = recs to format
@@ -288,12 +305,12 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun runExport(recs: List<Recording>, format: ExportFormat, tree: Uri) {
-        exportProgress = 0 to recs.size
+        busy = "Exporting" to (0 to recs.size)
         lifecycleScope.launch {
             val result = runCatching {
-                Exporter.export(this@MainActivity, recs, format, tree) { done, total -> exportProgress = done to total }
+                Exporter.export(this@MainActivity, recs, format, tree) { done, total -> busy = "Exporting" to (done to total) }
             }.getOrElse { ExportResult(0, recs.map { it.name }) }
-            exportProgress = null
+            busy = null
             selected = emptySet()
             val message = when {
                 result.failed.isEmpty() -> "Exported ${plural(result.exported, "recording")} as ${format.ext.uppercase()}"
@@ -344,8 +361,29 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
+    private fun ShareSizeDialog(recs: List<Recording>) {
+        val full = recs.sumOf { it.sizeBytes }
+        val small = recs.sumOf { Exporter.estimateSmallBytes(it.sizeBytes) }
+        val size = { b: Long -> Formatter.formatShortFileSize(this, b) }
+        AlertDialog(
+            onDismissRequest = { shareSizeRequest = null },
+            title = { Text("Too big for some email?") },
+            text = {
+                Text(
+                    "${if (recs.size == 1) "This recording is" else "These recordings are"} ${size(full)}. " +
+                        "Many email services only accept attachments up to 20–25 MB.\n\n" +
+                        "A smaller copy is about ${size(small)}. It's clear for speech, though not for music. " +
+                        "Your saved recording isn't changed."
+                )
+            },
+            confirmButton = { TextButton(onClick = { sendShare(recs, small = true) }) { Text("Send smaller copy") } },
+            dismissButton = { TextButton(onClick = { sendShare(recs, small = false) }) { Text("Full quality") } },
+        )
+    }
+
+    @Composable
     private fun ExportDialog(recs: List<Recording>) {
-        var format by remember { mutableStateOf(ExportFormat.AAC) }
+        var format by remember { mutableStateOf(ExportFormat.M4A) }
         AlertDialog(
             onDismissRequest = { exportRequest = null },
             title = { Text(if (recs.size == 1) "Export recording" else "Export ${recs.size} recordings") },
@@ -383,7 +421,7 @@ class MainActivity : ComponentActivity() {
                 TextButton(onClick = { selected = emptySet() }) { Text("Cancel") }
             }
             Row {
-                TextButton(onClick = { shareMany(picked) }, enabled = picked.isNotEmpty()) { Text("Share") }
+                TextButton(onClick = { share(picked) }, enabled = picked.isNotEmpty()) { Text("Share") }
                 TextButton(onClick = { exportRequest = picked }, enabled = picked.isNotEmpty()) { Text("Export") }
                 TextButton(onClick = { deleteRequest = picked }, enabled = picked.isNotEmpty()) {
                     Text("Delete", color = MaterialTheme.colorScheme.error)
@@ -628,7 +666,7 @@ class MainActivity : ComponentActivity() {
                 FlowRow {
                     TextButton(onClick = { togglePlay(rec) }) { Text(if (isPlaying) "Stop" else "Play") }
                     TextButton(onClick = { nameRequest = NameRequest(rec.uri, rec.name, isNew = false) }) { Text("Rename") }
-                    TextButton(onClick = { share(rec) }) { Text("Share") }
+                    TextButton(onClick = { share(listOf(rec)) }) { Text("Share") }
                     TextButton(onClick = { openWith(rec) }) { Text("Open with") }
                     TextButton(onClick = { exportRequest = listOf(rec) }) { Text("Export") }
                     TextButton(onClick = { deleteRequest = listOf(rec) }) {
@@ -639,6 +677,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+// Above this, sharing offers a smaller copy: Outlook allows 20 MB, Gmail 25 MB.
+private const val EMAIL_LIMIT_BYTES = 20L * 1024 * 1024
 
 private fun plural(n: Int, word: String) = if (n == 1) "1 $word" else "$n ${word}s"
 

@@ -106,6 +106,12 @@ Result codes: **Pass**, **Fail** (add a note and the time it happened, so it can
 | E10 | Export a second time. | The folder picker opens in the folder used last time. | |
 | E11 | Tap a single recording, then Export. | The same format choice and folder picker, for just that one. | |
 | E12 | Export a 10+ minute recording as WAV. | A progress box shows while it works. The WAV plays to the end. | |
+| E13 | Export one recording as M4A (the default) to Downloads. | A .m4a about the same size as the .aac. Plays in Samsung Music. | |
+| E14 | Share a short recording (under 20 MB) to Gmail and send it to yourself. Open it on a PC, Mac or iPhone. | Arrives as .m4a and plays there. No size question was asked. | |
+| E15 | Share the 10-minute B1 recording plus another long one (over 20 MB together). | Asks "Too big for some email?" with the full size and the smaller copy's size. | |
+| E16 | In E15, tap "Send smaller copy" and email it. | Files are named "... (small).m4a", about a quarter of the size estimate's original. Speech is clear on playback. | |
+| E17 | In E15, tap "Full quality". | Sends full-size M4A files. | |
+| E18 | Share one recording to WhatsApp. | Arrives and plays as an audio file. | |
 
 ## 7. Help
 

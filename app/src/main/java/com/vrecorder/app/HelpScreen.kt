@@ -50,7 +50,16 @@ private fun sections(folder: String) = listOf(
         listOf(
             "Tap a recording to show Play, Rename, Share, Open with, Export and Delete. Tap it again to hide them.",
             "To work with several at once, press and hold one, then tap the others. You can then Share, Export or Delete them together.",
-            "Export saves copies to any folder you pick (Downloads, an SD card, Google Drive, a USB stick) as AAC or WAV. WAV files are about 10 times bigger but suit editing software. Your originals stay where they are.",
+            "Export saves copies to any folder you pick (Downloads, an SD card, Google Drive, a USB stick). M4A opens on iPhones, Macs and Windows as well as Android. WAV is about 10 times bigger but suits editing software. Your originals stay where they are.",
+        ),
+    ),
+    HelpSection(
+        "Getting recordings off your phone",
+        listOf(
+            "Email, WhatsApp, Drive: tap Share and pick the app. Recordings are sent as M4A so the other person can open them on any device.",
+            "Long recordings: email services often refuse attachments over 20–25 MB (about 20 minutes of recording). Share will offer a smaller copy, about a quarter of a megabyte a minute, which is clear for speech.",
+            "To a computer: plug the phone in with a USB cable and open Recordings/VoiceRecorder. Or use Quick Share to a nearby Windows PC.",
+            "Lots of files at once: press and hold one recording, tap the others, then Share or Export.",
             "Share sends the file to WhatsApp, email and so on. Open with plays or edits it in another app.",
             "Use Search to find a recording by name, and Sort to change the order.",
         ),

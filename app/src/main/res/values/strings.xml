@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Recorder</string>
+    <string name="widget_description">One tap to start recording</string>
+    <string name="tile_label">Record</string>
 </resources>

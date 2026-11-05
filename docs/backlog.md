@@ -9,13 +9,12 @@ Free means it's part of the core that stays free forever. Paid means it goes in 
 | # | Item | Why | Tier |
 |---|---|---|---|
 | 1 | Longer and harsher reliability tests (B2 60 min, B6 battery saver, B7 restart) | B1 and B5 passed on the S20 FE; these cover the remaining ways a recording gets cut short | — |
-| 2 | Lock-screen and instant start: quick settings "Record" button, a cut-down quick record screen that shows over the lock screen (Pause and Stop only, no access to the list, so the Samsung corner shortcut works without unlocking), and a home-screen widget | "Instant start" is second in what users value. Check on Android 14+ whether a quick settings button can start the mic while locked | Free |
-
+| 2 | Trim, and cut out a middle section | Most-requested edit in positive reviews | Free |
+| 3 
 ## Later
 
 | Item | Why | Tier |
 |---|---|---|
-| Trim, and cut out a middle section | Requested in positive reviews | Free |
 | Mic choice (built-in, headset, Bluetooth, USB) and manual gain | Requested, and a Dolby On complaint | Free |
 | Folders or tags | "Naming, folders, search" is in the value list; naming and search are done | Free |
 | Bookmarks during recording | Requested | Free |
@@ -33,7 +32,7 @@ Free means it's part of the core that stays free forever. Paid means it goes in 
 - Proper app icon
 - Google Play developer account, and an organisation account if going the limited-company route
 - Privacy policy and Play data-safety form
-- Test on a Pixel, a Xiaomi and an older phone (test sheet section 8)
+- Test on a Pixel, a Xiaomi and an older phone (test sheet section 9)
 
 ## Done
 
@@ -53,3 +52,4 @@ Free means it's part of the core that stays free forever. Paid means it goes in 
 - Multi-select (long press): share, export or delete several at once
 - Export as M4A (default), AAC or WAV to any folder (Downloads, SD card, Drive, USB) via the system folder picker
 - Share as M4A for compatibility; offers a smaller speech-quality copy over 20 MB (email limits)
+- Instant start: quick settings Record button, home-screen widget, quick record screen over the lock screen (no access to the list)

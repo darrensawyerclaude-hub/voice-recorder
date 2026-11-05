@@ -159,7 +159,7 @@ class RecorderService : Service() {
             val e = AudioEngine(FileOutputStream(fd.fileDescriptor)) { _level.value = it }
             e.start()
             engine = e
-            _status.value = RecStatus(RecState.RECORDING, 0, SystemClock.elapsedRealtime())
+            publish(RecStatus(RecState.RECORDING, 0, SystemClock.elapsedRealtime()))
             updateNotification()
             callOverride = false
             normalSince = 0
@@ -168,7 +168,7 @@ class RecorderService : Service() {
             cleanUp()
             outputUri?.let { Recordings.delete(this, it) }
             outputUri = null
-            _status.value = RecStatus(error = "Couldn't start recording: ${e.message}")
+            publish(RecStatus(error = "Couldn't start recording: ${e.message}"))
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
         }
@@ -179,8 +179,15 @@ class RecorderService : Service() {
         if (s.state != RecState.RECORDING) return
         engine?.paused = true
         if (forCall) callPauseStartedAt = System.currentTimeMillis()
-        _status.value = s.copy(state = RecState.PAUSED, elapsedBeforeMs = s.elapsedMs(), pausedForCall = forCall)
+        publish(s.copy(state = RecState.PAUSED, elapsedBeforeMs = s.elapsedMs(), pausedForCall = forCall))
         updateNotification()
+    }
+
+    /** Sets the shared status and brings the quick settings tile and home-screen widget up to date. */
+    private fun publish(s: RecStatus) {
+        _status.value = s
+        RecordTileService.refresh(this)
+        RecordWidget.refresh(this)
     }
 
     /** Ends a call pause in progress (on resume or stop) and adds it to the list. */
@@ -195,9 +202,9 @@ class RecorderService : Service() {
         if (s.state != RecState.PAUSED) return
         if (audioManager.mode != AudioManager.MODE_NORMAL) callOverride = true
         engine?.paused = false
-        _status.value = withEndedCallPause(s).copy(
+        publish(withEndedCallPause(s).copy(
             state = RecState.RECORDING, segmentStartedAt = SystemClock.elapsedRealtime(),
-        )
+        ))
         updateNotification()
     }
 
@@ -208,7 +215,7 @@ class RecorderService : Service() {
         val summary = callSummary(withEndedCallPause(_status.value).callPauses)
         outputUri = null
         _level.value = 0f
-        _status.value = RecStatus()
+        publish(RecStatus())
         _justSaved.value = saved?.let { SavedRecording(it, summary) }
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()

@@ -113,7 +113,25 @@ Result codes: **Pass**, **Fail** (add a note and the time it happened, so it can
 | E17 | In E15, tap "Full quality". | Sends full-size M4A files. | |
 | E18 | Share one recording to WhatsApp. | Arrives and plays as an audio file. | |
 
-## 7. Help
+## 7. Instant start
+
+| ID | Steps | Expected | Result |
+|---|---|---|---|
+| Q1 | Add the Record button to quick settings (edit buttons, drag Record in). | It's listed with the red mic icon and labelled Record. | |
+| Q2 | Unlocked: pull down quick settings, tap Record. | The shade closes, the quick record screen opens and recording starts at once. The button shows as on. | |
+| Q3 | Tap the Record button again while recording. | Recording stops. The button goes back to off. Next time you open the app, it asks you to name the recording. | |
+| Q4 | Lock the phone. Pull down quick settings on the lock screen and tap Record. | The quick record screen shows over the lock screen without asking you to unlock, and recording starts. | |
+| Q5 | On the quick record screen while locked, try to reach the list of recordings. | There's no way to. Only Pause/Resume and Stop. | |
+| Q6 | On the quick record screen, tap Pause, then Resume, then Stop. | Each works. Stop closes the screen. | |
+| Q7 | Start from quick settings, then press Home or lock the phone. | Recording carries on (notification shows). | |
+| Q8 | Add the Recorder widget to the home screen. | It shows "● Record / Tap to record". | |
+| Q9 | Tap the widget. | Quick record screen opens and recording starts. Back on the home screen, the widget shows "■ Stop", a running timer and "Recording". | |
+| Q10 | Pause from the notification, look at the widget. | Timer stops, says "Paused". | |
+| Q11 | Tap the widget while recording. | Recording stops. Widget goes back to "● Record". | |
+| Q12 | Samsung: Settings → Lock screen → Shortcuts → set one corner to Recorder. Swipe it from the lock screen. | Note what happens (it may open the main app and ask to unlock; the quick settings button is the reliable lock-screen route). | |
+| Q13 | Fresh install, microphone not yet allowed, tap the widget. | The quick screen says to open the app once and allow the microphone. No crash. | |
+
+## 8. Help
 
 | ID | Steps | Expected | Result |
 |---|---|---|---|
@@ -123,7 +141,7 @@ Result codes: **Pass**, **Fail** (add a note and the time it happened, so it can
 | H4 | Tap "Open Recorder's settings". | The phone's settings page for Recorder opens. | |
 | H5 | Open Help while recording. | Recording carries on. Closing Help shows the timer still running. | |
 
-## 8. Phones to cover before launch
+## 9. Phones to cover before launch
 
 Background recording behaves differently by brand, so tick off at least one phone from each:
 

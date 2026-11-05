@@ -73,9 +73,11 @@ private fun sections(folder: String) = listOf(
         ),
     ),
     HelpSection(
-        "Start from the lock screen (Samsung)",
+        "Start recording in one tap",
         listOf(
-            "Settings → Lock screen → Shortcuts, then choose Recorder for one corner. Swipe it like the camera. You'll need to unlock before the app opens.",
+            "Quick settings button: swipe down twice from the top of the screen, tap the pencil (or ⋮ → Edit buttons), and drag Record into your buttons. Tap it to start recording from anywhere, even the lock screen. Tap it again to stop.",
+            "Home-screen widget: press and hold an empty space on your home screen, tap Widgets, find Recorder and drag it on. Tap it to record, and again to stop.",
+            "Both open a simple recording screen that works without unlocking. It only has Pause and Stop, so nobody can play your recordings from a locked phone. You name the recording next time you open the app.",
         ),
     ),
     HelpSection(

@@ -30,6 +30,7 @@ private fun sections(folder: String) = listOf(
         listOf(
             "Tap Record. The bar under the timer moves with your voice, so you can see the mic is hearing you.",
             "Pause and Resume as often as you like. It all goes into one file.",
+            "If a call comes in, recording pauses and then carries on by itself after the call.",
             "Tap Stop, then type a name or tap Keep default.",
             "Recording carries on with the screen off or while you use other apps. Pause and Stop are also in the notification, including on the lock screen.",
             "Quiet speech is raised automatically and loud sounds are held back, so recordings play at a normal volume everywhere.",
@@ -72,7 +73,7 @@ private fun sections(folder: String) = listOf(
             "Record does nothing: allow the microphone in Settings → Apps → Recorder → Permissions → Microphone.",
             "No notification while recording: allow notifications for Recorder in the same place.",
             "Playback is quiet: check the phone's media volume (press volume up while a recording plays).",
-            "Phone calls: stop recording before you answer. Pausing automatically for calls is coming in a future version.",
+            "Phone calls: recording pauses by itself when a call rings or starts, including WhatsApp and other internet calls, and carries on when the call ends. The call itself isn't recorded. Tap Resume if you want to carry on during the call. Android may silence the mic until the call ends.",
         ),
     ),
 )

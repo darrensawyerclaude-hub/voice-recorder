@@ -372,6 +372,14 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+            if (status.pausedForCall) {
+                Text(
+                    "Paused for a call. Recording resumes when the call ends.",
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 12.dp),
+                )
+            }
             status.error?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 12.dp))
             }

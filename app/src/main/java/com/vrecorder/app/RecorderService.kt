@@ -8,8 +8,11 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.media.AudioManager
 import android.net.Uri
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +27,8 @@ data class RecStatus(
     val elapsedBeforeMs: Long = 0,
     val segmentStartedAt: Long = 0,
     val error: String? = null,
+    // Paused automatically for a phone or VoIP call; resumes by itself when the call ends.
+    val pausedForCall: Boolean = false,
 ) {
     fun elapsedMs(now: Long = SystemClock.elapsedRealtime()): Long =
         if (state == RecState.RECORDING) elapsedBeforeMs + (now - segmentStartedAt) else elapsedBeforeMs
@@ -42,6 +47,8 @@ class RecorderService : Service() {
         const val ACTION_STOP = "stop"
         private const val CHANNEL_ID = "recording"
         private const val NOTIFICATION_ID = 1
+        private const val CALL_POLL_MS = 500L
+        private const val CALL_RESUME_DELAY_MS = 1500L
 
         private val _status = MutableStateFlow(RecStatus())
         val status: StateFlow<RecStatus> = _status
@@ -64,6 +71,38 @@ class RecorderService : Service() {
     private var engine: AudioEngine? = null
     private var pfd: ParcelFileDescriptor? = null
     private var outputUri: Uri? = null
+
+    /*
+     * Call detection via the audio mode rather than TelephonyManager: it needs no phone
+     * permission and also catches WhatsApp/Teams-style calls (MODE_IN_COMMUNICATION).
+     * During a call Android silences other apps' mic input anyway, so pausing loses nothing.
+     */
+    private val handler = Handler(Looper.getMainLooper())
+    private val audioManager by lazy { getSystemService(AudioManager::class.java) }
+    // Set when the user taps Resume during a call: don't pause again until that call ends.
+    private var callOverride = false
+    private var normalSince = 0L
+
+    private val callWatch = object : Runnable {
+        override fun run() {
+            if (engine == null) return
+            val inCall = audioManager.mode != AudioManager.MODE_NORMAL
+            val s = _status.value
+            val now = SystemClock.elapsedRealtime()
+            if (inCall) {
+                normalSince = 0
+                if (s.state == RecState.RECORDING && !callOverride) pause(forCall = true)
+            } else {
+                if (normalSince == 0L) normalSince = now
+                callOverride = false
+                // Short settle time so the end-of-call tone isn't recorded and brief mode flips don't resume.
+                if (s.state == RecState.PAUSED && s.pausedForCall && now - normalSince >= CALL_RESUME_DELAY_MS) {
+                    resume()
+                }
+            }
+            handler.postDelayed(this, CALL_POLL_MS)
+        }
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -92,6 +131,9 @@ class RecorderService : Service() {
             engine = e
             _status.value = RecStatus(RecState.RECORDING, 0, SystemClock.elapsedRealtime())
             updateNotification()
+            callOverride = false
+            normalSince = 0
+            handler.post(callWatch)
         } catch (e: Exception) {
             cleanUp()
             outputUri?.let { Recordings.delete(this, it) }
@@ -102,23 +144,27 @@ class RecorderService : Service() {
         }
     }
 
-    private fun pause() {
+    private fun pause(forCall: Boolean = false) {
         val s = _status.value
         if (s.state != RecState.RECORDING) return
         engine?.paused = true
-        _status.value = s.copy(state = RecState.PAUSED, elapsedBeforeMs = s.elapsedMs())
+        _status.value = s.copy(state = RecState.PAUSED, elapsedBeforeMs = s.elapsedMs(), pausedForCall = forCall)
         updateNotification()
     }
 
     private fun resume() {
         val s = _status.value
         if (s.state != RecState.PAUSED) return
+        if (audioManager.mode != AudioManager.MODE_NORMAL) callOverride = true
         engine?.paused = false
-        _status.value = s.copy(state = RecState.RECORDING, segmentStartedAt = SystemClock.elapsedRealtime())
+        _status.value = s.copy(
+            state = RecState.RECORDING, segmentStartedAt = SystemClock.elapsedRealtime(), pausedForCall = false,
+        )
         updateNotification()
     }
 
     private fun stop() {
+        handler.removeCallbacks(callWatch)
         cleanUp()
         val saved = outputUri
         outputUri = null
@@ -160,7 +206,14 @@ class RecorderService : Service() {
         )
         val builder = Notification.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_mic)
-            .setContentTitle(if (s.state == RecState.PAUSED) "Recording paused" else "Recording")
+            .setContentTitle(
+                when {
+                    s.pausedForCall -> "Paused for call"
+                    s.state == RecState.PAUSED -> "Recording paused"
+                    else -> "Recording"
+                }
+            )
+            .apply { if (s.pausedForCall) setContentText("Resumes automatically when the call ends") }
             .setContentIntent(open)
             .setOngoing(true)
             .setUsesChronometer(s.state == RecState.RECORDING)

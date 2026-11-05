@@ -57,7 +57,11 @@ Result codes: **Pass**, **Fail** (add a note and the time it happened, so it can
 | B5 | Record for 30 s, then Settings → Apps → Recorder → Force stop. | The file up to that point still plays. | Pass (6th build): 30 s kept, plays to the end, no gaps |
 | B6 | Record, then let the battery saver turn on (or turn it on manually). | Recording carries on. | |
 | B7 | Restart the phone during a recording. | The file up to the restart still plays. | |
-| B8 | Recording while a call comes in. Answer it, then hang up. | Note what happens. Calls aren't handled yet, so this records current behaviour. | |
+| B8 | Recording while a call comes in. Answer it, talk for 20 s, then hang up. | Pauses as soon as it rings ("Paused for call" in the app and notification, timer frozen). About 2 s after hanging up it resumes by itself. Neither the ringtone nor the call is in the file. | |
+| B8a | Recording while a call comes in. Decline it. | Pauses while ringing, resumes about 2 s after you decline. | |
+| B8b | Recording, then a WhatsApp (or other internet) call comes in. Answer, then hang up. | Same as B8. | |
+| B8c | Tap Pause yourself, then take a call and hang up. | Stays paused after the call (it only auto-resumes if the call paused it). | |
+| B8d | During a call that paused the recording, tap Resume. | Recording resumes and doesn't pause again during that call. Android may record silence until the call ends. | |
 | B9 | Another app uses the mic (e.g. a WhatsApp voice note) during a recording. | Note what happens. | |
 
 ## 5. Files and list

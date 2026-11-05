@@ -48,6 +48,7 @@ object Recordings {
             put(MediaStore.Audio.Media.DISPLAY_NAME, "Recording_$stamp.aac")
             put(MediaStore.Audio.Media.MIME_TYPE, MIME)
             put(MediaStore.Audio.Media.RELATIVE_PATH, relativePath)
+            // Tags the file as a voice recording (not "in progress") so media apps can tell it from music.
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 put(MediaStore.Audio.Media.IS_RECORDING, 1)
             }

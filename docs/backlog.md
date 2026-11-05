@@ -8,7 +8,7 @@ Free means it's part of the core that stays free forever. Paid means it goes in 
 
 | # | Item | Why | Tier |
 |---|---|---|---|
-| 1 | Run background and force-stop tests (B1, B5) | "Never losing a recording" is the top thing users value, and it's still unproven | — |
+| 1 | Longer and harsher reliability tests (B2 60 min, B6 battery saver, B7 restart) | B1 and B5 passed on the S20 FE; these cover the remaining ways a recording gets cut short | — |
 | 2 | Pause on incoming call, resume after | One of the most-requested features; test B8 currently has no handling | Free |
 | 3 | WAV export | Dolby On complaint; promised as free core in the monetisation rules | Free |
 | 4 | Export several recordings at once | Dolby On's "slow one-by-one export" complaint | Free |

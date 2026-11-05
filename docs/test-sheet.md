@@ -9,6 +9,7 @@ Copy the "Run log" table for each new run.
 |---|---|---|---|---|---|---|
 | 2026-11-05 | 0.1.0 (1st build) | Galaxy S20 FE / 13 | Darren | P1, P2 | R3, R4 | Timer frozen at 00:00; playback too quiet even at full volume |
 | 2026-11-05 | 0.1.0 (3rd build: recording gain, naming) | Galaxy S20 FE / 13 | Darren | R3, R4, P1, N1, N3, F3 | | Speech measured at -16 dBFS (was -25), noise floor -65 dBFS, peak -1.3 dBFS |
+| 2026-11-05 | 0.1.0 (6th build: list, open folder, Help) | Galaxy S20 FE / 13 | Darren | F4, H1, H2, B1, B5 | | B1: 10 min 47 s locked, no gaps. B5: force stop kept all 30 s |
 
 Result codes: **Pass**, **Fail** (add a note and the time it happened, so it can be matched to the log), **Skip**.
 
@@ -49,11 +50,11 @@ Result codes: **Pass**, **Fail** (add a note and the time it happened, so it can
 
 | ID | Steps | Expected | Result |
 |---|---|---|---|
-| B1 | Start recording, lock the screen for 10 min, then unlock and stop. | Timer shows about 10 min. The file is the full length. | |
+| B1 | Start recording, lock the screen for 10 min, then unlock and stop. | Timer shows about 10 min. The file is the full length. | Pass (6th build): 10 min 47 s, no gaps, no background kill in the log |
 | B2 | Same as B1 but 60 min. | Full length, no gaps. | |
 | B3 | Record, switch to 3 other apps (camera, browser, a game), then come back. | Still recording. Timer is correct. | |
 | B4 | Record, then swipe the app away from Recent apps. | Recording carries on (notification stays). Stopping it works. | |
-| B5 | Record for 30 s, then Settings → Apps → Recorder → Force stop. | The file up to that point still plays. | |
+| B5 | Record for 30 s, then Settings → Apps → Recorder → Force stop. | The file up to that point still plays. | Pass (6th build): 30 s kept, plays to the end, no gaps |
 | B6 | Record, then let the battery saver turn on (or turn it on manually). | Recording carries on. | |
 | B7 | Restart the phone during a recording. | The file up to the restart still plays. | |
 | B8 | Recording while a call comes in. Answer it, then hang up. | Note what happens. Calls aren't handled yet, so this records current behaviour. | |

@@ -5,16 +5,13 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.net.Uri
-import android.os.Build
 import android.os.IBinder
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
-import android.provider.MediaStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.io.FileOutputStream
@@ -124,21 +121,12 @@ class RecorderService : Service() {
     private fun stop() {
         cleanUp()
         val saved = outputUri
-        markFinished()
+        outputUri = null
         _level.value = 0f
         _status.value = RecStatus()
         _justSaved.value = saved
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
-    }
-
-    private fun markFinished() {
-        val uri = outputUri ?: return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val values = ContentValues().apply { put(MediaStore.Audio.Media.IS_RECORDING, 0) }
-            runCatching { contentResolver.update(uri, values, null, null) }
-        }
-        outputUri = null
     }
 
     private fun cleanUp() {

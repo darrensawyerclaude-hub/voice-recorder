@@ -88,9 +88,26 @@ Result codes: **Pass**, **Fail** (add a note and the time it happened, so it can
 | F15 | Tap Open folder (next to "Saved to …"). | The phone's file manager opens at Recordings/VoiceRecorder (My Files on Samsung), showing your recordings. | |
 | F16 | Same as F15 on a phone without that file manager (Pixel, Xiaomi). | The system Files app opens at the folder, or a message gives the folder path. Never nothing. | |
 | F17 | Tap a recording, then Open with. | A list of apps that can play audio appears. Picking one plays the recording. | |
-| F18 | Tap a recording on a narrow phone or with large text. | All five buttons are visible, wrapping onto a second line if needed. | |
+| F18 | Tap a recording on a narrow phone or with large text. | All six buttons are visible, wrapping onto a second line if needed. | |
 
-## 6. Help
+## 6. Selecting and exporting
+
+| ID | Steps | Expected | Result |
+|---|---|---|---|
+| E1 | Press and hold a recording. | Ticks appear on every row, the held one is ticked, and the top shows "1 selected" with Share, Export, Delete. | |
+| E2 | Tap two more rows, then tap one again. | Ticks toggle. The count updates. | |
+| E3 | Tap Select all, then Cancel. Then select again and press the phone's Back button. | Select all ticks everything shown (respects Search). Cancel and Back both leave selection mode without leaving the app. | |
+| E4 | Select 3, tap Share, pick WhatsApp or email. | All 3 files arrive and play. | |
+| E5 | Select 2, tap Delete. | Asks "Delete 2 recordings?". Delete removes both from the list and My Files. | |
+| E6 | Select 3, Export → AAC → choose Downloads. | "Exported 3 recordings as AAC". The files are in Downloads with the same names. The originals are still in the app. | |
+| E7 | Export one recording as WAV to Downloads. | A .wav about 10× the size of the .aac. It plays in Samsung Music or VLC with the same length and sound. | |
+| E8 | Export the same recording again to the same folder. | A second copy is saved with "(1)" in its name. Nothing is overwritten. | |
+| E9 | Export to Google Drive (pick Drive in the folder picker). | Files appear in Drive. | |
+| E10 | Export a second time. | The folder picker opens in the folder used last time. | |
+| E11 | Tap a single recording, then Export. | The same format choice and folder picker, for just that one. | |
+| E12 | Export a 10+ minute recording as WAV. | A progress box shows while it works. The WAV plays to the end. | |
+
+## 7. Help
 
 | ID | Steps | Expected | Result |
 |---|---|---|---|
@@ -100,7 +117,7 @@ Result codes: **Pass**, **Fail** (add a note and the time it happened, so it can
 | H4 | Tap "Open Recorder's settings". | The phone's settings page for Recorder opens. | |
 | H5 | Open Help while recording. | Recording carries on. Closing Help shows the timer still running. | |
 
-## 7. Phones to cover before launch
+## 8. Phones to cover before launch
 
 Background recording behaves differently by brand, so tick off at least one phone from each:
 

@@ -48,7 +48,9 @@ private fun sections(folder: String) = listOf(
     HelpSection(
         "Managing recordings",
         listOf(
-            "Tap a recording to show Play, Rename, Share, Open with and Delete. Tap it again to hide them.",
+            "Tap a recording to show Play, Rename, Share, Open with, Export and Delete. Tap it again to hide them.",
+            "To work with several at once, press and hold one, then tap the others. You can then Share, Export or Delete them together.",
+            "Export saves copies to any folder you pick (Downloads, an SD card, Google Drive, a USB stick) as AAC or WAV. WAV files are about 10 times bigger but suit editing software. Your originals stay where they are.",
             "Share sends the file to WhatsApp, email and so on. Open with plays or edits it in another app.",
             "Use Search to find a recording by name, and Sort to change the order.",
         ),

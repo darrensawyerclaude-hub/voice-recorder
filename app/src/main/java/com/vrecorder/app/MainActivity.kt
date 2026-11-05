@@ -14,7 +14,15 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.RadioButton
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import kotlin.math.min
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -93,8 +101,14 @@ class MainActivity : ComponentActivity() {
     private var recordings by mutableStateOf(emptyList<Recording>())
     private var playingUri by mutableStateOf<Uri?>(null)
     private var nameRequest by mutableStateOf<NameRequest?>(null)
-    private var deleteRequest by mutableStateOf<Recording?>(null)
+    private var deleteRequest by mutableStateOf<List<Recording>?>(null)
     private var expandedUri by mutableStateOf<Uri?>(null)
+    // Multi-select: entered with a long press, empty when not selecting.
+    private var selected by mutableStateOf(emptySet<Uri>())
+    // Recordings waiting for an export format, then for a folder.
+    private var exportRequest by mutableStateOf<List<Recording>?>(null)
+    private var pendingExport: Pair<List<Recording>, ExportFormat>? = null
+    private var exportProgress by mutableStateOf<Pair<Int, Int>?>(null)
     private var query by mutableStateOf("")
     private var sortOrder by mutableStateOf(SortOrder.NEWEST)
     private var showHelp by mutableStateOf(false)
@@ -108,6 +122,19 @@ class MainActivity : ComponentActivity() {
                 RecorderService.send(this, RecorderService.ACTION_START)
             }
         }
+
+    private val folderPicker = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { tree ->
+        val job = pendingExport
+        pendingExport = null
+        if (tree == null || job == null) return@registerForActivityResult
+        runCatching {
+            contentResolver.takePersistableUriPermission(
+                tree, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+        }
+        prefs.edit().putString("exportTree", tree.toString()).apply()
+        runExport(job.first, job.second, tree)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -134,6 +161,15 @@ class MainActivity : ComponentActivity() {
                     }
                     nameRequest?.let { NameDialog(it) }
                     deleteRequest?.let { DeleteDialog(it) }
+                    exportRequest?.let { ExportDialog(it) }
+                    exportProgress?.let { (done, total) ->
+                        AlertDialog(
+                            onDismissRequest = {},
+                            title = { Text("Exporting") },
+                            text = { Text("${min(done + 1, total)} of $total…") },
+                            confirmButton = {},
+                        )
+                    }
                 }
             }
         }
@@ -230,9 +266,48 @@ class MainActivity : ComponentActivity() {
         Toast.makeText(this, "Open your file manager and go to $path", Toast.LENGTH_LONG).show()
     }
 
-    private fun delete(rec: Recording) {
-        if (playingUri == rec.uri) stopPlayback()
-        Recordings.delete(this, rec.uri)
+    private fun shareMany(recs: List<Recording>) {
+        if (recs.size == 1) return share(recs[0])
+        val uris = ArrayList(recs.map { it.uri })
+        val send = Intent(Intent.ACTION_SEND_MULTIPLE)
+            .setType("audio/aac")
+            .putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        // ClipData carries the read permission for every file, not just the first.
+        send.clipData = android.content.ClipData.newRawUri(null, uris[0]).apply {
+            uris.drop(1).forEach { addItem(android.content.ClipData.Item(it)) }
+        }
+        startActivity(Intent.createChooser(send, "Share ${recs.size} recordings"))
+    }
+
+    private fun chooseExportFolder(recs: List<Recording>, format: ExportFormat) {
+        exportRequest = null
+        pendingExport = recs to format
+        // Start the picker in the last folder used, if there is one.
+        folderPicker.launch(prefs.getString("exportTree", null)?.let(Uri::parse))
+    }
+
+    private fun runExport(recs: List<Recording>, format: ExportFormat, tree: Uri) {
+        exportProgress = 0 to recs.size
+        lifecycleScope.launch {
+            val result = runCatching {
+                Exporter.export(this@MainActivity, recs, format, tree) { done, total -> exportProgress = done to total }
+            }.getOrElse { ExportResult(0, recs.map { it.name }) }
+            exportProgress = null
+            selected = emptySet()
+            val message = when {
+                result.failed.isEmpty() -> "Exported ${plural(result.exported, "recording")} as ${format.ext.uppercase()}"
+                result.exported == 0 -> "Couldn't export. Try a different folder."
+                else -> "Exported ${result.exported}. Couldn't export: ${result.failed.joinToString()}"
+            }
+            Toast.makeText(this@MainActivity, message, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun delete(recs: List<Recording>) {
+        if (recs.any { it.uri == playingUri }) stopPlayback()
+        recs.forEach { Recordings.delete(this, it.uri) }
+        selected = emptySet()
         refresh()
     }
 
@@ -248,19 +323,73 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun DeleteDialog(rec: Recording) {
+    private fun DeleteDialog(recs: List<Recording>) {
         AlertDialog(
             onDismissRequest = { deleteRequest = null },
-            title = { Text("Delete recording?") },
-            text = { Text("\"${rec.name.removeSuffix(".aac")}\" will be permanently deleted.") },
+            title = { Text(if (recs.size == 1) "Delete recording?" else "Delete ${recs.size} recordings?") },
+            text = {
+                Text(
+                    if (recs.size == 1) "\"${recs[0].name.removeSuffix(".aac")}\" will be permanently deleted."
+                    else "These ${recs.size} recordings will be permanently deleted."
+                )
+            },
             confirmButton = {
                 TextButton(onClick = {
                     deleteRequest = null
-                    delete(rec)
+                    delete(recs)
                 }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = { TextButton(onClick = { deleteRequest = null }) { Text("Cancel") } },
         )
+    }
+
+    @Composable
+    private fun ExportDialog(recs: List<Recording>) {
+        var format by remember { mutableStateOf(ExportFormat.AAC) }
+        AlertDialog(
+            onDismissRequest = { exportRequest = null },
+            title = { Text(if (recs.size == 1) "Export recording" else "Export ${recs.size} recordings") },
+            text = {
+                Column {
+                    ExportFormat.entries.forEach { f ->
+                        Row(
+                            Modifier.fillMaxWidth().clickable { format = f }.padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(selected = format == f, onClick = { format = f })
+                            Text(f.label)
+                        }
+                    }
+                    Text(
+                        "Copies are saved to a folder you choose next. Your originals stay where they are.",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+            },
+            confirmButton = { TextButton(onClick = { chooseExportFolder(recs, format) }) { Text("Choose folder") } },
+            dismissButton = { TextButton(onClick = { exportRequest = null }) { Text("Cancel") } },
+        )
+    }
+
+    @Composable
+    private fun SelectionBar(shown: List<Recording>) {
+        val picked = recordings.filter { it.uri in selected }
+        BackHandler { selected = emptySet() }
+        Column(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("${picked.size} selected", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                TextButton(onClick = { selected = shown.map { it.uri }.toSet() }) { Text("Select all") }
+                TextButton(onClick = { selected = emptySet() }) { Text("Cancel") }
+            }
+            Row {
+                TextButton(onClick = { shareMany(picked) }, enabled = picked.isNotEmpty()) { Text("Share") }
+                TextButton(onClick = { exportRequest = picked }, enabled = picked.isNotEmpty()) { Text("Export") }
+                TextButton(onClick = { deleteRequest = picked }, enabled = picked.isNotEmpty()) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            }
+        }
     }
 
     @Composable
@@ -418,7 +547,7 @@ class MainActivity : ComponentActivity() {
             val shown = sortOrder.apply(
                 recordings.filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
             )
-            SearchAndSort()
+            if (selected.isNotEmpty()) SelectionBar(shown) else SearchAndSort()
             HorizontalDivider()
             if (shown.isEmpty()) {
                 Text(
@@ -434,6 +563,8 @@ class MainActivity : ComponentActivity() {
                         isPlaying = playingUri == rec.uri,
                         isActive = rec.uri == activeUri,
                         isExpanded = expandedUri == rec.uri,
+                        isSelected = rec.uri in selected,
+                        selecting = selected.isNotEmpty(),
                     )
                     HorizontalDivider()
                 }
@@ -441,18 +572,41 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @OptIn(ExperimentalLayoutApi::class)
+    @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
     @Composable
-    private fun RecordingRow(rec: Recording, isPlaying: Boolean, isActive: Boolean, isExpanded: Boolean) {
+    private fun RecordingRow(
+        rec: Recording,
+        isPlaying: Boolean,
+        isActive: Boolean,
+        isExpanded: Boolean,
+        isSelected: Boolean,
+        selecting: Boolean,
+    ) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .clickable(enabled = !isActive) {
-                    expandedUri = if (isExpanded) null else rec.uri
-                }
+                .combinedClickable(
+                    enabled = !isActive,
+                    onClick = {
+                        if (selecting) selected = if (isSelected) selected - rec.uri else selected + rec.uri
+                        else expandedUri = if (isExpanded) null else rec.uri
+                    },
+                    onLongClick = {
+                        expandedUri = null
+                        selected = selected + rec.uri
+                    },
+                )
                 .padding(vertical = 10.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                if (selecting) {
+                    Checkbox(
+                        checked = isSelected,
+                        onCheckedChange = null,
+                        enabled = !isActive,
+                        modifier = Modifier.padding(end = 8.dp),
+                    )
+                }
                 Text(
                     rec.name.removeSuffix(".aac"),
                     style = MaterialTheme.typography.bodyLarge,
@@ -470,13 +624,14 @@ class MainActivity : ComponentActivity() {
                     Formatter.formatShortFileSize(this@MainActivity, rec.sizeBytes),
                 style = MaterialTheme.typography.bodySmall,
             )
-            if (isExpanded && !isActive) {
+            if (isExpanded && !isActive && !selecting) {
                 FlowRow {
                     TextButton(onClick = { togglePlay(rec) }) { Text(if (isPlaying) "Stop" else "Play") }
                     TextButton(onClick = { nameRequest = NameRequest(rec.uri, rec.name, isNew = false) }) { Text("Rename") }
                     TextButton(onClick = { share(rec) }) { Text("Share") }
                     TextButton(onClick = { openWith(rec) }) { Text("Open with") }
-                    TextButton(onClick = { deleteRequest = rec }) {
+                    TextButton(onClick = { exportRequest = listOf(rec) }) { Text("Export") }
+                    TextButton(onClick = { deleteRequest = listOf(rec) }) {
                         Text("Delete", color = MaterialTheme.colorScheme.error)
                     }
                 }
@@ -484,6 +639,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+private fun plural(n: Int, word: String) = if (n == 1) "1 $word" else "$n ${word}s"
 
 // Bits per second of the saved files, used to estimate length from size.
 private const val ENCODE_BITRATE = 128_000L

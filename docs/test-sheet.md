@@ -62,6 +62,9 @@ Result codes: **Pass**, **Fail** (add a note and the time it happened, so it can
 | B8b | Recording, then a WhatsApp (or other internet) call comes in. Answer, then hang up. | Same as B8. | |
 | B8c | Tap Pause yourself, then take a call and hang up. | Stays paused after the call (it only auto-resumes if the call paused it). | |
 | B8d | During a call that paused the recording, tap Resume. | Recording resumes and doesn't pause again during that call. Android may record silence until the call ends. | |
+| B8e | After B8, look at the app and the notification while still recording. | Both say "Paused for a [length] call at [time] · resumed". No pop-up or buzz appeared during the call. | |
+| B8f | Stop the recording from B8. | The naming box says "Paused for a [length] call at [time]. The call isn't in the recording." | |
+| B8g | Take two calls during one recording, then stop. | It says "Paused for 2 calls, [total] in total". | |
 | B9 | Another app uses the mic (e.g. a WhatsApp voice note) during a recording. | Note what happens. | |
 
 ## 5. Files and list

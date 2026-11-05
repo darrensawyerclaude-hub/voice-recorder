@@ -21,6 +21,32 @@ import java.io.FileOutputStream
 
 enum class RecState { IDLE, RECORDING, PAUSED }
 
+/** A stretch left out of the recording because of a call. [startedAt] is wall-clock millis. */
+data class CallPause(val startedAt: Long, val durationMs: Long)
+
+/** "Paused for a 2 min 10 s call at 14:05", or a count and total when there were several. */
+fun callSummary(pauses: List<CallPause>): String? {
+    if (pauses.isEmpty()) return null
+    if (pauses.size == 1) {
+        val p = pauses[0]
+        val at = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT).format(java.util.Date(p.startedAt))
+        return "Paused for a ${spokenDuration(p.durationMs)} call at $at"
+    }
+    return "Paused for ${pauses.size} calls, ${spokenDuration(pauses.sumOf { it.durationMs })} in total"
+}
+
+private fun spokenDuration(ms: Long): String {
+    val s = (ms + 500) / 1000
+    return when {
+        s < 60 -> "$s s"
+        s % 60 == 0L -> "${s / 60} min"
+        else -> "${s / 60} min ${s % 60} s"
+    }
+}
+
+/** A finished recording waiting to be named, with any call pauses to mention. */
+data class SavedRecording(val uri: Uri, val callSummary: String?)
+
 data class RecStatus(
     val state: RecState = RecState.IDLE,
     // Elapsed recording time excluding pauses, frozen while paused.
@@ -29,6 +55,8 @@ data class RecStatus(
     val error: String? = null,
     // Paused automatically for a phone or VoIP call; resumes by itself when the call ends.
     val pausedForCall: Boolean = false,
+    // Calls that paused this recording and have ended, oldest first.
+    val callPauses: List<CallPause> = emptyList(),
 ) {
     fun elapsedMs(now: Long = SystemClock.elapsedRealtime()): Long =
         if (state == RecState.RECORDING) elapsedBeforeMs + (now - segmentStartedAt) else elapsedBeforeMs
@@ -58,8 +86,8 @@ class RecorderService : Service() {
         val level: StateFlow<Float> = _level
 
         // The most recently finished recording, until the UI has offered to name it.
-        private val _justSaved = MutableStateFlow<Uri?>(null)
-        val justSaved: StateFlow<Uri?> = _justSaved
+        private val _justSaved = MutableStateFlow<SavedRecording?>(null)
+        val justSaved: StateFlow<SavedRecording?> = _justSaved
         fun consumeJustSaved() { _justSaved.value = null }
 
         fun send(context: Context, action: String) {
@@ -82,6 +110,8 @@ class RecorderService : Service() {
     // Set when the user taps Resume during a call: don't pause again until that call ends.
     private var callOverride = false
     private var normalSince = 0L
+    // Wall-clock start of the current call pause.
+    private var callPauseStartedAt = 0L
 
     private val callWatch = object : Runnable {
         override fun run() {
@@ -148,8 +178,16 @@ class RecorderService : Service() {
         val s = _status.value
         if (s.state != RecState.RECORDING) return
         engine?.paused = true
+        if (forCall) callPauseStartedAt = System.currentTimeMillis()
         _status.value = s.copy(state = RecState.PAUSED, elapsedBeforeMs = s.elapsedMs(), pausedForCall = forCall)
         updateNotification()
+    }
+
+    /** Ends a call pause in progress (on resume or stop) and adds it to the list. */
+    private fun withEndedCallPause(s: RecStatus): RecStatus {
+        if (!s.pausedForCall) return s
+        val pause = CallPause(callPauseStartedAt, System.currentTimeMillis() - callPauseStartedAt)
+        return s.copy(pausedForCall = false, callPauses = s.callPauses + pause)
     }
 
     private fun resume() {
@@ -157,8 +195,8 @@ class RecorderService : Service() {
         if (s.state != RecState.PAUSED) return
         if (audioManager.mode != AudioManager.MODE_NORMAL) callOverride = true
         engine?.paused = false
-        _status.value = s.copy(
-            state = RecState.RECORDING, segmentStartedAt = SystemClock.elapsedRealtime(), pausedForCall = false,
+        _status.value = withEndedCallPause(s).copy(
+            state = RecState.RECORDING, segmentStartedAt = SystemClock.elapsedRealtime(),
         )
         updateNotification()
     }
@@ -167,10 +205,11 @@ class RecorderService : Service() {
         handler.removeCallbacks(callWatch)
         cleanUp()
         val saved = outputUri
+        val summary = callSummary(withEndedCallPause(_status.value).callPauses)
         outputUri = null
         _level.value = 0f
         _status.value = RecStatus()
-        _justSaved.value = saved
+        _justSaved.value = saved?.let { SavedRecording(it, summary) }
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -213,7 +252,12 @@ class RecorderService : Service() {
                     else -> "Recording"
                 }
             )
-            .apply { if (s.pausedForCall) setContentText("Resumes automatically when the call ends") }
+            .apply {
+                when {
+                    s.pausedForCall -> setContentText("Resumes automatically when the call ends")
+                    s.callPauses.isNotEmpty() -> setContentText("${callSummary(s.callPauses)} · resumed")
+                }
+            }
             .setContentIntent(open)
             .setOngoing(true)
             .setUsesChronometer(s.state == RecState.RECORDING)

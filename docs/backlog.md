@@ -50,3 +50,4 @@ Free means it's part of the core that stays free forever. Paid means it goes in 
 - Share, Open with
 - Help screen
 - Auto-pause for phone and internet calls, auto-resume after (no phone permission needed)
+- After-call summary in the app, notification and naming box

@@ -66,7 +66,12 @@ import java.text.DateFormat
 import java.util.Date
 
 /** A recording waiting to be named: either just finished, or picked from the list. */
-private data class NameRequest(val uri: Uri, val currentName: String, val isNew: Boolean)
+private data class NameRequest(
+    val uri: Uri,
+    val currentName: String,
+    val isNew: Boolean,
+    val note: String? = null,
+)
 
 private enum class SortOrder(val label: String) {
     NEWEST("Newest first"),
@@ -116,10 +121,10 @@ class MainActivity : ComponentActivity() {
                     // Refresh the list whenever a recording starts or stops.
                     LaunchedEffect(status.state) { refresh() }
                     LaunchedEffect(justSaved) {
-                        val uri = justSaved ?: return@LaunchedEffect
+                        val saved = justSaved ?: return@LaunchedEffect
                         RecorderService.consumeJustSaved()
-                        Recordings.displayName(this@MainActivity, uri)?.let {
-                            nameRequest = NameRequest(uri, it, isNew = true)
+                        Recordings.displayName(this@MainActivity, saved.uri)?.let {
+                            nameRequest = NameRequest(saved.uri, it, isNew = true, note = saved.callSummary)
                         }
                     }
                     if (showHelp) {
@@ -299,15 +304,24 @@ class MainActivity : ComponentActivity() {
             onDismissRequest = { nameRequest = null },
             title = { Text(if (req.isNew) "Name this recording" else "Rename recording") },
             text = {
-                OutlinedTextField(
-                    value = field,
-                    onValueChange = { field = it },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.Sentences,
-                        imeAction = ImeAction.Done,
-                    ),
-                )
+                Column {
+                    req.note?.let {
+                        Text(
+                            "$it. The call isn't in the recording.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(bottom = 12.dp),
+                        )
+                    }
+                    OutlinedTextField(
+                        value = field,
+                        onValueChange = { field = it },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Sentences,
+                            imeAction = ImeAction.Done,
+                        ),
+                    )
+                }
             },
             confirmButton = {
                 TextButton(onClick = { applyName(req, field.text) }) { Text("Save") }
@@ -372,9 +386,14 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-            if (status.pausedForCall) {
+            val callLine = when {
+                status.pausedForCall -> "Paused for a call. Recording resumes when the call ends."
+                status.state != RecState.IDLE -> callSummary(status.callPauses)?.let { "$it · resumed" }
+                else -> null
+            }
+            callLine?.let {
                 Text(
-                    "Paused for a call. Recording resumes when the call ends.",
+                    it,
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 12.dp),

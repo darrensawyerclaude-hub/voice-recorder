@@ -100,14 +100,14 @@ Result codes: **Pass**, **Fail** (add a note and the time it happened, so it can
 | E4 | Select 3, tap Share, pick WhatsApp or email. | All 3 files arrive and play. | |
 | E5 | Select 2, tap Delete. | Asks "Delete 2 recordings?". Delete removes both from the list and My Files. | |
 | E6 | Select 3, Export → AAC → choose Downloads. | "Exported 3 recordings as AAC". The files are in Downloads with the same names. The originals are still in the app. | |
-| E7 | Export one recording as WAV to Downloads. | A .wav about 10× the size of the .aac. It plays in Samsung Music or VLC with the same length and sound. | |
+| E7 | Export one recording as WAV to Downloads. | A .wav about 10× the size of the .aac. It plays in Samsung Music or VLC with the same length and sound. | Pass (build 9): valid 48 kHz mono 16-bit WAV, 39 s, same length and level as the original |
 | E8 | Export the same recording again to the same folder. | A second copy is saved with "(1)" in its name. Nothing is overwritten. | |
 | E9 | Export to Google Drive (pick Drive in the folder picker). | Files appear in Drive. | |
 | E10 | Export a second time. | The folder picker opens in the folder used last time. | |
 | E11 | Tap a single recording, then Export. | The same format choice and folder picker, for just that one. | |
 | E12 | Export a 10+ minute recording as WAV. | A progress box shows while it works. The WAV plays to the end. | |
 | E13 | Export one recording as M4A (the default) to Downloads. | A .m4a about the same size as the .aac. Plays in Samsung Music. | |
-| E14 | Share a short recording (under 20 MB) to Gmail and send it to yourself. Open it on a PC, Mac or iPhone. | Arrives as .m4a and plays there. No size question was asked. | |
+| E14 | Share a short recording (under 20 MB) to Gmail and send it to yourself. Open it on a PC, Mac or iPhone. | Arrives as .m4a and plays there. No size question was asked. | Partial (build 9): sent via Gmail OK; opening on a non-Android device not yet confirmed |
 | E15 | Share the 10-minute B1 recording plus another long one (over 20 MB together). | Asks "Too big for some email?" with the full size and the smaller copy's size. | |
 | E16 | In E15, tap "Send smaller copy" and email it. | Files are named "... (small).m4a", about a quarter of the size estimate's original. Speech is clear on playback. | |
 | E17 | In E15, tap "Full quality". | Sends full-size M4A files. | |

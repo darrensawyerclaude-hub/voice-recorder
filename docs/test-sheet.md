@@ -154,6 +154,17 @@ Result codes: **Pass**, **Fail** (add a note and the time it happened, so it can
 | K17 | Replace original. | Asks to confirm first. Afterwards the recording is shorter and the original audio outside the selection is gone. | |
 | K18 | Delete a recording that had bookmarks, then make a new one. | The new one starts with no bookmarks. | |
 
+## 8b. Transcribe
+
+| ID | Steps | Expected | Result |
+|---|---|---|---|
+| T1 | Player → Transcribe. | Shows "On this phone" (not yet available, with its limits) and the AI apps installed that accept audio, plus "Other app…". Claude isn't listed. | |
+| T2 | Pick Gemini. | Gemini opens with the recording attached and the instructions filled in (or ready to paste). | Pass (6 Nov): Gemini worked |
+| T3 | Gemini's reply. | British spelling, [mm:ss] timestamps, Speaker 1/2 labels, summary, action points, offered as a .txt file. Bookmarks marked. | |
+| T4 | Pick ChatGPT. | Accepts the file (sent as a 16 kHz WAV) and transcribes it. | Fail (6 Nov, build before WAV): "try as WAV or MP3" |
+| T5 | Claude (via Other app…). | Not suitable: tries to install tools rather than listen. | Fail (6 Nov), removed from the list |
+| T6 | Transcribe a 30+ minute recording with each app. | Note the length limit each app hits. | |
+
 ## 9. Help
 
 | ID | Steps | Expected | Result |

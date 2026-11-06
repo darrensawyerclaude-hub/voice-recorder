@@ -11,7 +11,7 @@ Nothing may add a running cost for us. "Cost to run" says whether an item needs 
 |---|---|---|---|
 | 1 | Longer and harsher reliability tests (B2 60 min, B6 battery saver, B7 restart) | B1 and B5 passed on the S20 FE; these cover the remaining ways a recording gets cut short | — |
 | 2 | Mic choice (built-in, headset, Bluetooth, USB) and manual gain | Requested, and a Dolby On complaint | None |
-| 3 | "Transcribe with AI" button: send the recording as M4A to Gemini, ChatGPT or Claude with a ready-made prompt | Transcription and summaries without any cost to us; all three apps accept shared audio on the S20 FE | None (user's own AI account) |
+| 3 | On-device transcription test: time Whisper base, Whisper small and Moonshine base on the 10-min recording (models and test screen ready; needs the phone plugged in) | Decides whether "On this phone" ships | None |
 | 4 | Before-launch list (name, ID, icon, privacy policy, Play account, billing) | The app ID can't change after the first upload | — |
 
 ## Later
@@ -59,4 +59,5 @@ Nothing may add a running cost for us. "Cost to run" says whether an item needs 
 - Playback screen: timeline, ±10 s, speed 0.75–2×
 - Bookmarks while recording (app, quick screen, notification) and while playing; rename, delete, jump
 - Trim and cut out a middle section, frame-exact with no re-encoding; save as copy or replace; bookmarks follow the edit
+- Transcribe with an AI app: Gemini (M4A) and ChatGPT (16 kHz WAV) with a British-English transcript prompt incl. bookmarks; Claude excluded (can't listen to audio)
 - Instant start: quick settings Record button, home-screen widget, quick record screen over the lock screen (no access to the list)

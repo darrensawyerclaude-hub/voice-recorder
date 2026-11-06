@@ -427,8 +427,10 @@ class PlayerActivity : ComponentActivity() {
         preparing = true
         val rec = Recording(uri, name, 0, 0)
         lifecycleScope.launch {
+            val wav = AiHandoff.wantsWav(app)
             val file = runCatching {
-                Exporter.prepareForSharing(this@PlayerActivity, listOf(rec), small = false) { _, _ -> }.first()
+                if (wav) Exporter.prepareSpeechWav(this@PlayerActivity, rec)
+                else Exporter.prepareForSharing(this@PlayerActivity, listOf(rec), small = false) { _, _ -> }.first()
             }.getOrNull()
             preparing = false
             transcribing = false
@@ -436,7 +438,7 @@ class PlayerActivity : ComponentActivity() {
                 Toast.makeText(this@PlayerActivity, "Couldn't prepare the recording.", Toast.LENGTH_LONG).show()
                 return@launch
             }
-            runCatching { AiHandoff.send(this@PlayerActivity, file, AiHandoff.prompt(bookmarks), app) }
+            runCatching { AiHandoff.send(this@PlayerActivity, file, if (wav) "audio/wav" else "audio/mp4", AiHandoff.prompt(bookmarks), app) }
                 .onSuccess {
                     Toast.makeText(
                         this@PlayerActivity,
@@ -473,7 +475,7 @@ class PlayerActivity : ComponentActivity() {
                     )
                     if (aiApps.isEmpty()) {
                         Text(
-                            "No AI apps found on this phone. Install Gemini, ChatGPT or Claude, or pick another app below.",
+                            "No AI apps found on this phone. Install Gemini or ChatGPT, or pick another app below.",
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }

@@ -11,7 +11,7 @@ Nothing may add a running cost for us. "Cost to run" says whether an item needs 
 |---|---|---|---|
 | 1 | Longer and harsher reliability tests (B2 60 min, B6 battery saver, B7 restart) | B1 and B5 passed on the S20 FE; these cover the remaining ways a recording gets cut short | — |
 | 2 | Mic choice (built-in, headset, Bluetooth, USB) and manual gain | Requested, and a Dolby On complaint | None |
-| 3 | On-device transcription test: time Whisper base, Whisper small and Moonshine base on the 10-min recording (models and test screen ready; needs the phone plugged in) | Decides whether "On this phone" ships | None |
+| 3 | On-device transcription: Quick (Moonshine) and Accurate (Whisper small) choice, split at pauses, skip silence, transcript view synced to audio | Tested 6 Nov: Whisper small about 95% accurate, Moonshine 15× faster than real time (see docs/transcription-test.md) | None (models via Play Asset Delivery) |
 | 4 | Before-launch list (name, ID, icon, privacy policy, Play account, billing) | The app ID can't change after the first upload | — |
 
 ## Later
@@ -23,7 +23,6 @@ Nothing may add a running cost for us. "Cost to run" says whether an item needs 
 | Choice of save folder for new recordings | Requested. Export can already send copies to any folder | None |
 | Record straight to WAV (lossless) | Musicians; export to WAV only converts the AAC | None |
 | Auto-backup to the user's own Google Drive | People lost recordings when changing phone | None (user's Drive, no server of ours) |
-| On-device transcription (Whisper via sherpa-onnx, British spelling); test speed and battery on the S20 FE first | AI group; accessibility users; private, works offline | None (model via Play Asset Delivery) |
 | Summaries, speaker names | AI group. Via the AI-app handoff only; a cloud API would cost us | None if via handoff |
 | Search inside transcripts | Needs on-device transcription or a pasted transcript | None |
 

@@ -44,4 +44,6 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material:material-icons-core")
+    // On-device transcription test only (see src/debug); not in release builds.
+    debugImplementation(files("libs/sherpa-onnx-2.0.1.aar"))
 }

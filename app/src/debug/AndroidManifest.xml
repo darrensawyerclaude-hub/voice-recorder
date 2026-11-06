@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug builds only: on-device transcription test screen, started with adb. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity
+            android:name=".SttTestActivity"
+            android:exported="true"
+            android:keepScreenOn="true" />
+    </application>
+</manifest>

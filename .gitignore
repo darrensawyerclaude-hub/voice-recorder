@@ -5,3 +5,6 @@ local.properties
 .idea/
 captures/
 .kotlin/
+
+# Large third-party binaries (sherpa-onnx test library); fetched separately, not committed.
+app/libs/*.aar

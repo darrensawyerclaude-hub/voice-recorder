@@ -9,6 +9,12 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.drawable.toBitmap
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -78,6 +84,11 @@ class PlayerActivity : ComponentActivity() {
     private var bookmarks by mutableStateOf(emptyList<Bookmark>())
     private var renaming by mutableStateOf<Bookmark?>(null)
 
+    // Transcribe choice sheet.
+    private var transcribing by mutableStateOf(false)
+    private var aiApps by mutableStateOf(emptyList<AiApp>())
+    private var preparing by mutableStateOf(false)
+
     // Trim/cut mode.
     private var editing by mutableStateOf(false)
     private var editMode by mutableStateOf(AdtsEditor.Mode.KEEP)
@@ -106,6 +117,7 @@ class PlayerActivity : ComponentActivity() {
                     PlayerScreen()
                     renaming?.let { RenameDialog(it) }
                     if (confirmReplace) ReplaceDialog()
+                    if (transcribing) TranscribeDialog()
                 }
             }
         }
@@ -260,6 +272,11 @@ class PlayerActivity : ComponentActivity() {
                     Box(Modifier.weight(1f))
                     TextButton(onClick = {
                         pause()
+                        aiApps = AiHandoff.installed(this@PlayerActivity)
+                        transcribing = true
+                    }) { Text("Transcribe") }
+                    TextButton(onClick = {
+                        pause()
                         editing = true
                     }) { Text("Trim / cut") }
                 }
@@ -403,6 +420,84 @@ class PlayerActivity : ComponentActivity() {
                 }) { Text("Save") }
             },
             dismissButton = { TextButton(onClick = { renaming = null }) { Text("Cancel") } },
+        )
+    }
+
+    private fun handOff(app: AiApp?) {
+        preparing = true
+        val rec = Recording(uri, name, 0, 0)
+        lifecycleScope.launch {
+            val file = runCatching {
+                Exporter.prepareForSharing(this@PlayerActivity, listOf(rec), small = false) { _, _ -> }.first()
+            }.getOrNull()
+            preparing = false
+            transcribing = false
+            if (file == null) {
+                Toast.makeText(this@PlayerActivity, "Couldn't prepare the recording.", Toast.LENGTH_LONG).show()
+                return@launch
+            }
+            runCatching { AiHandoff.send(this@PlayerActivity, file, AiHandoff.prompt(bookmarks), app) }
+                .onSuccess {
+                    Toast.makeText(
+                        this@PlayerActivity,
+                        "Instructions copied. If they aren't already in the message, paste them in.",
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
+                .onFailure { Toast.makeText(this@PlayerActivity, "Couldn't open that app.", Toast.LENGTH_LONG).show() }
+        }
+    }
+
+    @Composable
+    private fun TranscribeDialog() {
+        AlertDialog(
+            onDismissRequest = { if (!preparing) transcribing = false },
+            title = { Text("Transcribe") },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    Text("On this phone (private)", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "Being tested, not available yet. When it is: a one-off download of a few hundred MB, it takes " +
+                            "roughly as long as the recording, uses a lot of battery and warms the phone (best while " +
+                            "charging), English only, and it won't name speakers. Nothing leaves your phone.",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(bottom = 16.dp),
+                    )
+                    Text("With an AI app", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "Fast and accurate, with speakers, a summary and action points. The recording is sent to that " +
+                            "company under your own account, so check everyone recorded is happy with that. Very long " +
+                            "recordings may be over the app's limit.",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(bottom = 8.dp),
+                    )
+                    if (aiApps.isEmpty()) {
+                        Text(
+                            "No AI apps found on this phone. Install Gemini, ChatGPT or Claude, or pick another app below.",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                    aiApps.forEach { app ->
+                        Row(
+                            Modifier.fillMaxWidth().clickable(enabled = !preparing) { handOff(app) }.padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            app.icon?.let {
+                                Image(
+                                    bitmap = it.toBitmap(96, 96).asImageBitmap(),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(32.dp),
+                                )
+                            }
+                            Text(app.label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 12.dp))
+                        }
+                    }
+                    TextButton(onClick = { handOff(null) }, enabled = !preparing) { Text("Other app…") }
+                    if (preparing) Text("Preparing the recording…", style = MaterialTheme.typography.bodySmall)
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { transcribing = false }, enabled = !preparing) { Text("Cancel") } },
         )
     }
 

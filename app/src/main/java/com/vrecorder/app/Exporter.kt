@@ -237,7 +237,7 @@ object Exporter {
      * Returns (sample rate, channel count). [onFormat] is called once with the PCM format
      * before the first chunk reaches [sink].
      */
-    private fun decodeToPcm(
+    internal fun decodeToPcm(
         context: Context,
         source: Uri,
         onFormat: (rate: Int, channels: Int) -> Unit = { _, _ -> },

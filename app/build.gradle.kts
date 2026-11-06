@@ -15,6 +15,8 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
+        // Phones only: drops the x86 emulator builds of the speech library (about 25 MB).
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
     buildTypes {
@@ -44,6 +46,8 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material:material-icons-core")
-    // On-device transcription test only (see src/debug); not in release builds.
-    debugImplementation(files("libs/sherpa-onnx-2.0.1.aar"))
+    // On-device speech recognition. Not committed (50 MB): run scripts/fetch-sherpa-onnx.sh.
+    implementation(files("libs/sherpa-onnx-2.0.1.aar"))
+    // Unpacks the Moonshine model, which is only published as a .tar.bz2.
+    implementation("org.apache.commons:commons-compress:1.27.1")
 }

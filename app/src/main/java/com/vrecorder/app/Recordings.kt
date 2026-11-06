@@ -103,5 +103,6 @@ object Recordings {
     fun delete(context: Context, uri: Uri) {
         context.contentResolver.delete(uri, null, null)
         Bookmarks.remove(context, uri)
+        Transcripts.delete(context, uri)
     }
 }

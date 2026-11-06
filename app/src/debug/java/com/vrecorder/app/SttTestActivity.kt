@@ -36,6 +36,17 @@ class SttTestActivity : Activity() {
         setContentView(ScrollView(this).apply { addView(log) })
         // Stay on screen for the whole run: in the background Samsung closes the app within a minute.
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        // "--es app QUICK" runs the real feature (download, service, saved transcript) instead.
+        intent.getStringExtra("app")?.let { m ->
+            val rec = Recordings.list(this).first { it.name == intent.getStringExtra("file") }
+            val ms = android.media.MediaMetadataRetriever().run {
+                setDataSource(this@SttTestActivity, rec.uri)
+                extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)!!.toLong().also { release() }
+            }
+            TranscriptionService.start(this, rec, SpeechModel.valueOf(m), ms)
+            finish()
+            return
+        }
         val model = intent.getStringExtra("model") ?: "whisper-base"
         val fileName = intent.getStringExtra("file")
         val threads = intent.getIntExtra("threads", 4)

@@ -9,6 +9,11 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
+import android.text.format.Formatter
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -86,6 +91,10 @@ class PlayerActivity : ComponentActivity() {
 
     // Transcribe choice sheet.
     private var transcribing by mutableStateOf(false)
+    private var transcript by mutableStateOf<Transcript?>(null)
+    private var showTranscript by mutableStateOf(false)
+    private var transcriptQuery by mutableStateOf("")
+    private var confirmDeleteTranscript by mutableStateOf(false)
     private var aiApps by mutableStateOf(emptyList<AiApp>())
     private var preparing by mutableStateOf(false)
 
@@ -103,10 +112,20 @@ class PlayerActivity : ComponentActivity() {
         uri = intent.data ?: return finish()
         name = intent.getStringExtra(EXTRA_NAME) ?: "Recording"
         bookmarks = Bookmarks.get(this, uri)
+        transcript = Transcripts.get(this, uri)
+        showTranscript = transcript != null
         if (!prepare()) return
         setContent {
             MaterialTheme {
                 Surface(Modifier.fillMaxSize()) {
+                    val job by TranscriptionService.job.collectAsStateWithLifecycle()
+                    // Pick up the transcript as soon as a job for this recording finishes.
+                    LaunchedEffect(job?.phase) {
+                        if (job?.uri == uri && job?.phase == TranscribeJob.Phase.DONE) {
+                            transcript = Transcripts.get(this@PlayerActivity, uri)
+                            showTranscript = true
+                        }
+                    }
                     LaunchedEffect(Unit) {
                         while (true) {
                             player?.let { if (playing) positionMs = it.currentPosition.toLong() }
@@ -114,10 +133,11 @@ class PlayerActivity : ComponentActivity() {
                             delay(100)
                         }
                     }
-                    PlayerScreen()
+                    PlayerScreen(job?.takeIf { it.uri == uri })
                     renaming?.let { RenameDialog(it) }
                     if (confirmReplace) ReplaceDialog()
                     if (transcribing) TranscribeDialog()
+                    if (confirmDeleteTranscript) DeleteTranscriptDialog()
                 }
             }
         }
@@ -234,7 +254,7 @@ class PlayerActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun PlayerScreen() {
+    private fun PlayerScreen(job: TranscribeJob?) {
         Column(Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 16.dp)) {
             Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -282,17 +302,164 @@ class PlayerActivity : ComponentActivity() {
                 }
             }
 
+            job?.let { JobProgress(it) }
             HorizontalDivider(Modifier.padding(top = 8.dp))
-            Text(
-                if (bookmarks.isEmpty()) "No bookmarks yet. Tap Bookmark while recording or playing."
-                else "Bookmarks",
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(vertical = 8.dp),
-            )
-            LazyColumn(Modifier.fillMaxSize()) {
-                items(bookmarks, key = { it.id }) { b -> BookmarkRow(b) }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TabLabel("Bookmarks (${bookmarks.size})", !showTranscript) { showTranscript = false }
+                TabLabel(if (transcript != null) "Transcript" else "Transcript (none yet)", showTranscript) { showTranscript = true }
+            }
+            if (showTranscript) TranscriptPanel() else {
+                if (bookmarks.isEmpty()) {
+                    Text(
+                        "No bookmarks yet. Tap Bookmark while recording or playing.",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
+                }
+                LazyColumn(Modifier.fillMaxSize()) {
+                    items(bookmarks, key = { it.id }) { b -> BookmarkRow(b) }
+                }
             }
         }
+    }
+
+    @Composable
+    private fun TabLabel(text: String, selected: Boolean, onClick: () -> Unit) {
+        TextButton(onClick = onClick) {
+            Text(
+                text,
+                style = MaterialTheme.typography.titleSmall,
+                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+
+    @Composable
+    private fun JobProgress(j: TranscribeJob) {
+        Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            when (j.phase) {
+                TranscribeJob.Phase.DOWNLOADING, TranscribeJob.Phase.TRANSCRIBING -> {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            (if (j.phase == TranscribeJob.Phase.DOWNLOADING) "Downloading the ${j.model.label} model… "
+                            else "Transcribing on this phone… ") + "${(j.progress * 100).toInt()}%",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(onClick = { TranscriptionService.cancel(this@PlayerActivity) }) { Text("Cancel") }
+                    }
+                    LinearProgressIndicator(progress = { j.progress }, modifier = Modifier.fillMaxWidth())
+                    Text(
+                        "You can leave this screen; it carries on in the background.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+                TranscribeJob.Phase.FAILED -> Text(
+                    "Transcription failed: ${j.error}. Check your connection if the model was downloading, then try again.",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                else -> {}
+            }
+        }
+    }
+
+    @Composable
+    private fun TranscriptPanel() {
+        val t = transcript
+        if (t == null) {
+            Text(
+                "No transcript yet. Tap Transcribe to make one on this phone or with Gemini.",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(vertical = 8.dp),
+            )
+            return
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = transcriptQuery,
+                onValueChange = { transcriptQuery = it },
+                placeholder = { Text("Search transcript") },
+                singleLine = true,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Row {
+            TextButton(onClick = ::shareTranscript) { Text("Share") }
+            TextButton(onClick = ::copyTranscript) { Text("Copy") }
+            TextButton(onClick = { confirmDeleteTranscript = true }) {
+                Text("Delete", color = MaterialTheme.colorScheme.error)
+            }
+        }
+        val q = transcriptQuery.trim()
+        val shown = if (q.isEmpty()) t.segments else t.segments.filter { it.text.contains(q, ignoreCase = true) }
+        if (t.segments.isEmpty()) {
+            Text("No speech was found in this recording.", style = MaterialTheme.typography.bodySmall)
+        } else if (shown.isEmpty()) {
+            Text("Nothing matches \"$q\".", style = MaterialTheme.typography.bodySmall)
+        }
+        val playingColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+        val markColor = MaterialTheme.colorScheme.error
+        LazyColumn(Modifier.fillMaxSize()) {
+            items(shown, key = { it.startMs }) { s ->
+                val current = positionMs in s.startMs until s.endMs
+                val marks = bookmarks.filter { it.positionMs in s.startMs until s.endMs }
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .then(if (current) Modifier.background(playingColor) else Modifier)
+                        .clickable { seekTo(s.startMs) }
+                        .padding(vertical = 6.dp, horizontal = 4.dp)
+                ) {
+                    marks.forEach {
+                        Text("🔖 ${it.label}", color = markColor, style = MaterialTheme.typography.bodySmall)
+                    }
+                    Row {
+                        Text(formatClock(s.startMs), style = MaterialTheme.typography.bodySmall, modifier = Modifier.width(52.dp))
+                        Text(s.text, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun transcriptText() = transcript?.toPlainText(name.removeSuffix(".aac"), bookmarks) ?: ""
+
+    private fun shareTranscript() {
+        val dir = java.io.File(cacheDir, "share").apply { mkdirs() }
+        val f = java.io.File(dir, name.removeSuffix(".aac") + " (transcript).txt")
+        f.writeText(transcriptText())
+        val fileUri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.files", f)
+        val send = Intent(Intent.ACTION_SEND)
+            .setType("text/plain")
+            .putExtra(Intent.EXTRA_STREAM, fileUri)
+            .putExtra(Intent.EXTRA_SUBJECT, "Transcript: ${name.removeSuffix(".aac")}")
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        send.clipData = android.content.ClipData.newRawUri(null, fileUri)
+        startActivity(Intent.createChooser(send, "Share transcript"))
+    }
+
+    private fun copyTranscript() {
+        getSystemService(android.content.ClipboardManager::class.java)
+            .setPrimaryClip(android.content.ClipData.newPlainText("Transcript", transcriptText()))
+        Toast.makeText(this, "Transcript copied", Toast.LENGTH_SHORT).show()
+    }
+
+    @Composable
+    private fun DeleteTranscriptDialog() {
+        AlertDialog(
+            onDismissRequest = { confirmDeleteTranscript = false },
+            title = { Text("Delete transcript?") },
+            text = { Text("The recording is kept. You can transcribe it again later.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    Transcripts.delete(this@PlayerActivity, uri)
+                    transcript = null
+                    confirmDeleteTranscript = false
+                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { confirmDeleteTranscript = false }) { Text("Cancel") } },
+        )
     }
 
     @Composable
@@ -457,12 +624,43 @@ class PlayerActivity : ComponentActivity() {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
                     Text("On this phone (private)", style = MaterialTheme.typography.titleSmall)
                     Text(
-                        "Being tested, not available yet. When it is: a one-off download of a few hundred MB, it takes " +
-                            "roughly as long as the recording, uses a lot of battery and warms the phone (best while " +
-                            "charging), English only, and it won't name speakers. Nothing leaves your phone.",
+                        "Nothing leaves your phone. English only, and it doesn't name speakers. It works hard: the phone " +
+                            "gets warm and uses battery, so for long recordings plug it in. Older or cheaper phones " +
+                            "can take several times longer. Check names and figures against the recording.",
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(bottom = 16.dp),
                     )
+                    val busy = TranscriptionService.job.value?.running == true
+                    SpeechModel.entries.forEach { m ->
+                        val installed = SpeechModels.isInstalled(this@PlayerActivity, m)
+                        val estimate = formatEstimate((durationMs / m.speedOnTestPhone).toLong())
+                        Column(
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable(enabled = !busy) {
+                                    TranscriptionService.start(this@PlayerActivity, Recording(uri, name, 0, 0), m, durationMs)
+                                    transcribing = false
+                                    showTranscript = true
+                                }
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Text("${m.label}: ${m.summary}", style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                (if (installed) "Downloaded. " else "One-off download of ${Formatter.formatShortFileSize(this@PlayerActivity, m.downloadBytes)} (Wi-Fi recommended). ") +
+                                    "About $estimate for this recording on a fast phone.",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
+                    if (busy) Text("A transcription is already running.", style = MaterialTheme.typography.bodySmall)
+                    val downloaded = SpeechModel.entries.filter { SpeechModels.isInstalled(this@PlayerActivity, it) }
+                    if (downloaded.isNotEmpty() && !busy) {
+                        TextButton(onClick = {
+                            downloaded.forEach { SpeechModels.delete(this@PlayerActivity, it) }
+                            transcribing = false
+                            Toast.makeText(this@PlayerActivity, "Downloaded models removed", Toast.LENGTH_SHORT).show()
+                        }) { Text("Remove downloaded models to free space") }
+                    }
+                    Spacer(Modifier.height(16.dp))
                     Text("With an AI app", style = MaterialTheme.typography.titleSmall)
                     Text(
                         "Fast and accurate, with speakers, a summary and action points. The recording is sent to that " +
@@ -517,6 +715,15 @@ class PlayerActivity : ComponentActivity() {
             },
             dismissButton = { TextButton(onClick = { confirmReplace = false }) { Text("Cancel") } },
         )
+    }
+}
+
+private fun formatEstimate(ms: Long): String {
+    val s = ms / 1000
+    return when {
+        s < 60 -> "${s.coerceAtLeast(5)} seconds"
+        s < 3600 -> "${(s + 30) / 60} minute${if ((s + 30) / 60 == 1L) "" else "s"}"
+        else -> "%.1f hours".format(s / 3600f)
     }
 }
 

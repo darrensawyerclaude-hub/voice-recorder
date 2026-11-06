@@ -99,6 +99,8 @@ class MainActivity : ComponentActivity() {
 
     private var recordings by mutableStateOf(emptyList<Recording>())
     private var bookmarkCounts by mutableStateOf(emptyMap<String, Int>())
+    // Transcript text by MediaStore ID, so search finds words said in a recording.
+    private var transcriptText by mutableStateOf(emptyMap<String, String>())
     private var nameRequest by mutableStateOf<NameRequest?>(null)
     private var deleteRequest by mutableStateOf<List<Recording>?>(null)
     private var expandedUri by mutableStateOf<Uri?>(null)
@@ -186,6 +188,7 @@ class MainActivity : ComponentActivity() {
     private fun refresh() {
         recordings = Recordings.list(this)
         bookmarkCounts = Bookmarks.counts(this)
+        transcriptText = Transcripts.allText(this)
     }
 
     private fun startRecording() {
@@ -408,7 +411,7 @@ class MainActivity : ComponentActivity() {
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
-                placeholder = { Text("Search recordings") },
+                placeholder = { Text("Search names and transcripts") },
                 singleLine = true,
                 trailingIcon = {
                     if (query.isNotEmpty()) TextButton(onClick = { query = "" }) { Text("Clear") }
@@ -568,7 +571,10 @@ class MainActivity : ComponentActivity() {
             // The file being written is always the newest one; it can't be played or changed yet.
             val activeUri = if (status.state != RecState.IDLE) recordings.maxByOrNull { it.dateAddedSec }?.uri else null
             val shown = sortOrder.apply(
-                recordings.filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
+                recordings.filter {
+                    query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) ||
+                        transcriptText[it.uri.lastPathSegment]?.contains(query.trim(), ignoreCase = true) == true
+                }
             )
             if (selected.isNotEmpty()) SelectionBar(shown) else SearchAndSort()
             HorizontalDivider()
@@ -584,6 +590,7 @@ class MainActivity : ComponentActivity() {
                     RecordingRow(
                         rec,
                         bookmarkCount = Bookmarks.countFor(bookmarkCounts, rec.uri),
+                        hasTranscript = rec.uri.lastPathSegment in transcriptText,
                         isActive = rec.uri == activeUri,
                         isExpanded = expandedUri == rec.uri,
                         isSelected = rec.uri in selected,
@@ -600,6 +607,7 @@ class MainActivity : ComponentActivity() {
     private fun RecordingRow(
         rec: Recording,
         bookmarkCount: Int,
+        hasTranscript: Boolean,
         isActive: Boolean,
         isExpanded: Boolean,
         isSelected: Boolean,
@@ -644,7 +652,8 @@ class MainActivity : ComponentActivity() {
                     .format(Date(rec.dateAddedSec * 1000)) + " · " +
                     formatDuration(rec.sizeBytes * 8 * 1000 / ENCODE_BITRATE) + " · " +
                     Formatter.formatShortFileSize(this@MainActivity, rec.sizeBytes) +
-                    if (bookmarkCount > 0) " · ${plural(bookmarkCount, "bookmark")}" else "",
+                    (if (bookmarkCount > 0) " · ${plural(bookmarkCount, "bookmark")}" else "") +
+                    (if (hasTranscript) " · transcript" else ""),
                 style = MaterialTheme.typography.bodySmall,
             )
             if (isExpanded && !isActive && !selecting) {

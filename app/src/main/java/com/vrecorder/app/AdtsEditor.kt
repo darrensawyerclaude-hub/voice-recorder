@@ -93,6 +93,8 @@ object AdtsEditor {
                 tmp.inputStream().use { it.copyTo(out) }
             }
             Bookmarks.set(context, target, remapBookmarks(Bookmarks.get(context, source), startMs, endMs, mode))
+            // The audio changed, so any transcript no longer lines up with it.
+            if (!asCopy) Transcripts.delete(context, target)
             return target
         } finally {
             tmp.delete()

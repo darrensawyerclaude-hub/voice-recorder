@@ -48,3 +48,17 @@ reason to cut out silent stretches before transcribing.
   downloaded on first use through Play Asset Delivery. Both MIT licensed for English.
 - Still to measure: battery use off the charger, a budget phone, and a real meeting with
   several speakers and background noise.
+
+## In the app (6 Nov 2026, same 2 min 7 s reading)
+
+The built feature: voice detection splits the audio at pauses, neighbouring speech is grouped
+into stretches of up to 20 seconds, silence is skipped, and spelling is converted to British.
+
+| Setting | Word error rate | Time on the S20 FE |
+|---|---|---|
+| Accurate (Whisper small) | **5.3%** | 85 s including the 375 MB download (fast Wi-Fi) |
+| Quick (Moonshine base) | 8.6% | 33 s (model already downloaded) |
+
+Splitting at every short pause made Quick worse (tiny pieces lose context, e.g. "Shares and elon
+masks"); grouping fixed the worst of that. Transcripts now come out as paragraphs that start at
+natural pauses, so tapping a line jumps to the start of a sentence.

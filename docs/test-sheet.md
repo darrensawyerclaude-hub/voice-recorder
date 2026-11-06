@@ -165,6 +165,17 @@ Result codes: **Pass**, **Fail** (add a note and the time it happened, so it can
 | T5 | Claude (via Other app…). | Not suitable: tries to install tools rather than listen. | Fail (6 Nov), removed from the list |
 | T6 | Transcribe a 30+ minute recording with each app. | Note the length limit each app hits. | |
 
+| T7 | Transcribe → On this phone → Quick, on a 2-minute recording (first time). | Shows download progress (111 MB), then transcribing progress, in the player and a notification. "Transcript ready" notification at the end. | |
+| T8 | Same with Accurate. | 375 MB download, then transcribes. Slower but fewer mistakes. | |
+| T9 | Start a transcription, then leave the app and lock the phone. | It finishes; the notification opens the recording. | |
+| T10 | Cancel during download, and during transcribing. | Stops. A part-download is removed. Nothing half-saved. | |
+| T11 | Transcript tab: tap a line. | Jumps to that point; the current line is highlighted while playing. Bookmarks show in place. | |
+| T12 | Search inside the transcript, then Copy and Share. | Filters lines; Copy and Share give the whole transcript with timestamps and bookmarks. | |
+| T13 | Search the main list for a word that was said but isn't in any name. | The recording appears. Its row says "transcript". | |
+| T14 | Replace original after a trim/cut on a transcribed recording. | The old transcript is removed (it no longer lines up). | |
+| T15 | Remove downloaded models. | Models are deleted; the next transcription downloads again. | |
+| T16 | Transcribe a 30+ minute recording, unplugged. | Note time taken, battery used and how warm the phone gets. | |
+
 ## 9. Help
 
 | ID | Steps | Expected | Result |

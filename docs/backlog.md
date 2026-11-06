@@ -11,8 +11,7 @@ Nothing may add a running cost for us. "Cost to run" says whether an item needs 
 |---|---|---|---|
 | 1 | Longer and harsher reliability tests (B2 60 min, B6 battery saver, B7 restart) | B1 and B5 passed on the S20 FE; these cover the remaining ways a recording gets cut short | — |
 | 2 | Mic choice (built-in, headset, Bluetooth, USB) and manual gain | Requested, and a Dolby On complaint | None |
-| 3 | On-device transcription: Quick (Moonshine) and Accurate (Whisper small) choice, split at pauses, skip silence, transcript view synced to audio | Tested 6 Nov: Whisper small about 95% accurate, Moonshine 15× faster than real time (see docs/transcription-test.md) | None (models via Play Asset Delivery) |
-| 4 | Before-launch list (name, ID, icon, privacy policy, Play account, billing) | The app ID can't change after the first upload | — |
+| 3 | Before-launch list (name, ID, icon, privacy policy, Play account, billing) | The app ID can't change after the first upload | — |
 
 ## Later
 
@@ -31,7 +30,9 @@ Nothing may add a running cost for us. "Cost to run" says whether an item needs 
 - Final app name and ID (currently the placeholders "Recorder" and `com.vrecorder.app`; the ID can't change after the first upload)
 - Proper app icon
 - Google Play developer account, and an organisation account if going the limited-company route
-- Privacy policy and Play data-safety form
+- Privacy policy and Play data-safety form (the app now uses the internet, only to download speech models)
+- Move speech-model downloads to Play Asset Delivery (currently Hugging Face and GitHub, third-party hosting)
+- Measure transcription battery use unplugged, and speed on a budget phone
 - Google Play billing: about £1/month and about £10/year, free trial, renewal reminder, two-tap cancel (needs the Play account to test)
 - Lapsed subscribers: play, share and export stay free forever; recording and editing need the subscription
 - Store page leads with: "£1 a month. Everything included. No ads. Your files stay yours, even if you cancel."
@@ -58,5 +59,6 @@ Nothing may add a running cost for us. "Cost to run" says whether an item needs 
 - Playback screen: timeline, ±10 s, speed 0.75–2×
 - Bookmarks while recording (app, quick screen, notification) and while playing; rename, delete, jump
 - Trim and cut out a middle section, frame-exact with no re-encoding; save as copy or replace; bookmarks follow the edit
+- On-device transcription: Quick (Moonshine) or Accurate (Whisper small), downloaded on first use; split at pauses, silence skipped, British spelling; background service with progress; transcript tab with tap-to-jump, search, copy, share; main search covers transcripts
 - Transcribe with an AI app: Gemini, with a British-English transcript prompt incl. bookmarks. ChatGPT and Claude tested and excluded: their apps can't transcribe a shared audio file
 - Instant start: quick settings Record button, home-screen widget, quick record screen over the lock screen (no access to the list)

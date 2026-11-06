@@ -158,10 +158,10 @@ Result codes: **Pass**, **Fail** (add a note and the time it happened, so it can
 
 | ID | Steps | Expected | Result |
 |---|---|---|---|
-| T1 | Player → Transcribe. | Shows "On this phone" (not yet available, with its limits) and the AI apps installed that accept audio, plus "Other app…". Claude isn't listed. | |
+| T1 | Player → Transcribe. | Shows "On this phone" (not yet available, with its limits) and the AI apps installed that accept audio, plus "Other app…". Only Gemini is listed by name; others are under "Other app…". | |
 | T2 | Pick Gemini. | Gemini opens with the recording attached and the instructions filled in (or ready to paste). | Pass (6 Nov): Gemini worked |
 | T3 | Gemini's reply. | British spelling, [mm:ss] timestamps, Speaker 1/2 labels, summary, action points, offered as a .txt file. Bookmarks marked. | |
-| T4 | Pick ChatGPT. | Accepts the file (sent as a 16 kHz WAV) and transcribes it. | Fail (6 Nov, build before WAV): "try as WAV or MP3" |
+| T4 | ChatGPT (via Other app…). | Not suitable: rejects M4A; given a valid 16 kHz WAV it runs code over it and says the words can't be transcribed. | Fail (6 Nov), removed from the list |
 | T5 | Claude (via Other app…). | Not suitable: tries to install tools rather than listen. | Fail (6 Nov), removed from the list |
 | T6 | Transcribe a 30+ minute recording with each app. | Note the length limit each app hits. | |
 

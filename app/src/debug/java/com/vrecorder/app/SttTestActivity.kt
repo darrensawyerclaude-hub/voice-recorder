@@ -34,6 +34,8 @@ class SttTestActivity : Activity() {
         super.onCreate(savedInstanceState)
         log = TextView(this).apply { setPadding(32, 64, 32, 32); textSize = 13f }
         setContentView(ScrollView(this).apply { addView(log) })
+        // Stay on screen for the whole run: in the background Samsung closes the app within a minute.
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         val model = intent.getStringExtra("model") ?: "whisper-base"
         val fileName = intent.getStringExtra("file")
         val threads = intent.getIntExtra("threads", 4)

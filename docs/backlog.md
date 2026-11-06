@@ -59,5 +59,5 @@ Nothing may add a running cost for us. "Cost to run" says whether an item needs 
 - Playback screen: timeline, ±10 s, speed 0.75–2×
 - Bookmarks while recording (app, quick screen, notification) and while playing; rename, delete, jump
 - Trim and cut out a middle section, frame-exact with no re-encoding; save as copy or replace; bookmarks follow the edit
-- Transcribe with an AI app: Gemini (M4A) and ChatGPT (16 kHz WAV) with a British-English transcript prompt incl. bookmarks; Claude excluded (can't listen to audio)
+- Transcribe with an AI app: Gemini, with a British-English transcript prompt incl. bookmarks. ChatGPT and Claude tested and excluded: their apps can't transcribe a shared audio file
 - Instant start: quick settings Record button, home-screen widget, quick record screen over the lock screen (no access to the list)

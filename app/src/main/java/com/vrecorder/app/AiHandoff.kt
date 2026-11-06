@@ -18,21 +18,12 @@ data class AiApp(val label: String, val packageName: String, val activity: Strin
  */
 object AiHandoff {
 
-    // Known AI assistants, in the order they're offered. Others that accept audio aren't listed:
-    // the share sheet already covers them, and a list of every music app would bury these.
-    // Claude isn't listed: its app accepts the file but can't listen to audio (tested 6 Nov 2026).
+    // Only apps tested to actually transcribe a shared recording are offered by name; anything else
+    // is still reachable through "Other app…". Tested 6 Nov 2026: ChatGPT and Claude accept the
+    // file but only run code over it (no speech recognition), so they can't transcribe.
     private val known = listOf(
         "com.google.android.apps.bard",     // Gemini
-        "com.openai.chatgpt",
-        "com.microsoft.copilot",
-        "ai.perplexity.app.android",
     )
-
-    // ChatGPT rejects M4A and asks for WAV or MP3 (tested 6 Nov 2026). Android can't encode MP3,
-    // so it gets a 16 kHz WAV: fine for speech, about 1.9 MB a minute.
-    private val wavOnly = setOf("com.openai.chatgpt")
-
-    fun wantsWav(app: AiApp?) = app != null && app.packageName in wavOnly
 
     fun installed(context: Context): List<AiApp> {
         val pm = context.packageManager

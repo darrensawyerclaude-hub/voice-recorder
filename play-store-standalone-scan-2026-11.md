@@ -24,7 +24,20 @@ Method: 30 utility-category searches on Google Play UK (~770 apps seen). Kept 10
 - Users are actively leaving and naming alternatives, so the barrier is distribution and switching, not building. A one-tap importer from the failing app (Nova layout, Muzio playlists, Moon+ library and positions) is the wedge.
 - Distinct from the thesis: this is a digital lane with low barriers to entry, and every category already has free open-source options.
 
-## Decision: monetisation (Darren, 3 Nov 2026)
+## Decision: monetisation, revised (Darren, 6 Nov 2026)
+Replaces the 3 Nov decision below.
+
+One plan, about £1 a month, for everything. No free tier with premium features held back, no ads, no lock-in, cancel any time. The app must stay free for us to run.
+
+- **Price:** about £1/month, plus an annual option of about £10/year. After 20% UK VAT and Google's 15% subscription fee, we keep roughly £0.71 per subscriber per month (to confirm against current Play terms), so 1,000 subscribers is about £710/month.
+- **Trial:** free trial (14 days to 1 month) so people can try before paying. No silent conversion: clear notice when the trial ends, reminder before each renewal, two-tap cancellation.
+- **No lock-in, made concrete:** recordings live in a normal folder on the phone. If someone stops paying, playing, sharing and exporting every recording stays free forever; only making new recordings (and editing) needs the subscription.
+- **Zero running cost for us:** everything runs on the phone. Transcription and summaries go through the user's own AI app (Gemini, ChatGPT, Claude) via share; any on-device transcription model is downloaded through Play Asset Delivery (free hosting); any backup goes to the user's own Google Drive. Ruled out: our own servers, paid cloud APIs, share links.
+- **Store page headline:** "£1 a month. Everything included. No ads. Your files stay yours, even if you cancel."
+- **Risk to watch:** the positive-review study found classic recorder users pay small one-off sums and no reviewer praised a subscription. £12/year is above the £1.29-£6.49 they usually pay once. The trial, the no-lock-in promise and the price have to carry this; watch conversion and cancellations closely.
+- **Kill rule unchanged:** fewer than 100 paying subscribers within 60 days of launch. It tests demand; the business only pays at thousands of subscribers.
+
+## Decision: monetisation (Darren, 3 Nov 2026), superseded 6 Nov 2026
 Cheap subscription, chosen over a one-off unlock for recurring revenue. Rules, drawn from what the reviews punished:
 - Core job free forever (for the recorder: recording and clean WAV export). No paywall on the core task.
 - Subscription pays for features with a real ongoing cost (transcription, summaries, search across recordings, cloud backup).

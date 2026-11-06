@@ -2,28 +2,30 @@
 
 Ordered by priority. The evidence comes from the review studies in
 [play-store-standalone-scan-2026-11.md](../play-store-standalone-scan-2026-11.md).
-Free means it's part of the core that stays free forever. Paid means it goes in the subscription.
+Pricing (decided 6 Nov 2026): one plan, about £1 a month, everything included, no ads.
+Nothing may add a running cost for us. "Cost to run" says whether an item needs a server or paid API.
 
 ## Next
 
-| # | Item | Why | Tier |
+| # | Item | Why | Cost to run |
 |---|---|---|---|
 | 1 | Longer and harsher reliability tests (B2 60 min, B6 battery saver, B7 restart) | B1 and B5 passed on the S20 FE; these cover the remaining ways a recording gets cut short | — |
-| 2 | Mic choice (built-in, headset, Bluetooth, USB) and manual gain | Requested, and a Dolby On complaint | Free |
-| 3 | Before-launch list (name, ID, icon, privacy policy, Play account) | The app ID can't change after the first upload | — |
+| 2 | Mic choice (built-in, headset, Bluetooth, USB) and manual gain | Requested, and a Dolby On complaint | None |
+| 3 | "Transcribe with AI" button: send the recording as M4A to Gemini, ChatGPT or Claude with a ready-made prompt | Transcription and summaries without any cost to us; all three apps accept shared audio on the S20 FE | None (user's own AI account) |
+| 4 | Before-launch list (name, ID, icon, privacy policy, Play account, billing) | The app ID can't change after the first upload | — |
 
 ## Later
 
-| Item | Why | Tier |
+| Item | Why | Cost to run |
 |---|---|---|
-| Folders or tags | "Naming, folders, search" is in the value list; naming and search are done | Free |
-| Skip silence on playback | Requested | Free |
-| Choice of save folder for new recordings | Requested. Export can already send copies to any folder | Free |
-| Record straight to WAV (lossless) | Musicians; export to WAV only converts the AAC | Free |
-| Auto-backup to Google Drive | People lost recordings when changing phone | Paid |
-| Transcription (British spelling) | AI group; accessibility users | Paid |
-| Summaries, speaker names | AI group | Paid |
-| Search inside transcripts | Ongoing-cost feature | Paid |
+| Folders or tags | "Naming, folders, search" is in the value list; naming and search are done | None |
+| Skip silence on playback | Requested | None |
+| Choice of save folder for new recordings | Requested. Export can already send copies to any folder | None |
+| Record straight to WAV (lossless) | Musicians; export to WAV only converts the AAC | None |
+| Auto-backup to the user's own Google Drive | People lost recordings when changing phone | None (user's Drive, no server of ours) |
+| On-device transcription (Whisper via sherpa-onnx, British spelling); test speed and battery on the S20 FE first | AI group; accessibility users; private, works offline | None (model via Play Asset Delivery) |
+| Summaries, speaker names | AI group. Via the AI-app handoff only; a cloud API would cost us | None if via handoff |
+| Search inside transcripts | Needs on-device transcription or a pasted transcript | None |
 
 ## Before launch
 
@@ -31,6 +33,9 @@ Free means it's part of the core that stays free forever. Paid means it goes in 
 - Proper app icon
 - Google Play developer account, and an organisation account if going the limited-company route
 - Privacy policy and Play data-safety form
+- Google Play billing: about £1/month and about £10/year, free trial, renewal reminder, two-tap cancel (needs the Play account to test)
+- Lapsed subscribers: play, share and export stay free forever; recording and editing need the subscription
+- Store page leads with: "£1 a month. Everything included. No ads. Your files stay yours, even if you cancel."
 - Test on a Pixel, a Xiaomi and an older phone (test sheet section 10)
 
 ## Done

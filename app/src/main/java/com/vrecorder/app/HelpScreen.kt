@@ -48,7 +48,8 @@ private fun sections(folder: String) = listOf(
     HelpSection(
         "Playing, trimming and cutting",
         listOf(
-            "Tap a recording, then Play. Drag the timeline to move around, use −10 s / +10 s to skip, and tap 1× to change speed (up to 2×).",
+            "Tap a recording, then Play. Drag the timeline to move around, use −10 s / +10 s to skip, and tap 1× to change speed (0.5× to 2×).",
+            "Repeat cycles through off, the whole recording, and A–B: in A–B, play to the start point and tap A, then to the end point and tap B, and that part loops.",
             "Tap Trim / cut. Choose Keep only the selection (trim the ends) or Cut out the selection (remove a middle part), then drag the two handles.",
             "To cut exactly at a bookmark, tap the bookmark to move there, then Start here or End here. Preview plays the result before you save.",
             "Save as copy keeps the original and adds a \"(trimmed)\" or \"(cut)\" recording. Replace original changes it permanently. Editing doesn't re-encode, so there's no loss of quality.",
@@ -61,7 +62,8 @@ private fun sections(folder: String) = listOf(
             "On this phone: Quick (about 92% of words right, very fast) or Accurate (about 95%, slower). The first time, the app downloads the model you pick (111 MB or 375 MB; use Wi-Fi). After that it works offline and nothing leaves your phone. English only, and speakers aren't named.",
             "It runs in the background with progress in a notification, so you can leave the app. Long recordings make the phone warm and use battery, so plug it in. Older phones can take several times longer.",
             "With Gemini: faster for long recordings, names speakers and adds a summary, but the recording is sent to Google under your account.",
-            "In the transcript, tap a line to jump to that point. Bookmarks are shown in place. Search, Copy or Share it as a text file.",
+            "In the transcript, tap a line to jump to that point. Press and hold a line to correct it. Bookmarks are shown in place. Search, Copy or Share it as a text file.",
+            "Summarise sends the transcript text (not the audio) to Gemini for a summary and action points.",
             "The main Search box also finds words inside transcripts.",
             "Always check names and figures against the recording.",
             "To free space, use Remove downloaded models in the Transcribe box.",

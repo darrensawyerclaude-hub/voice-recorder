@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.combinedClickable
 import android.text.format.Formatter
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Spacer
@@ -69,7 +70,7 @@ class PlayerActivity : ComponentActivity() {
 
     companion object {
         private const val EXTRA_NAME = "name"
-        private val SPEEDS = listOf(1f, 1.25f, 1.5f, 2f, 0.75f)
+        private val SPEEDS = listOf(1f, 1.25f, 1.5f, 2f, 0.5f, 0.75f)
         private const val SKIP_MS = 10_000
         // Lead-in/out around a cut when previewing it.
         private const val PREVIEW_MARGIN_MS = 3_000L
@@ -88,6 +89,13 @@ class PlayerActivity : ComponentActivity() {
     private var speedIndex by mutableStateOf(0)
     private var bookmarks by mutableStateOf(emptyList<Bookmark>())
     private var renaming by mutableStateOf<Bookmark?>(null)
+
+    // Repeat: off, the whole recording, or between two points (A–B).
+    private enum class Repeat(val label: String) { OFF("Repeat: off"), ALL("Repeat: all"), AB("Repeat: A–B") }
+    private var repeat by mutableStateOf(Repeat.OFF)
+    private var repeatA by mutableStateOf<Long?>(null)
+    private var repeatB by mutableStateOf<Long?>(null)
+    private var editingLine by mutableStateOf<TranscriptSegment?>(null)
 
     // Transcribe choice sheet.
     private var transcribing by mutableStateOf(false)
@@ -138,6 +146,7 @@ class PlayerActivity : ComponentActivity() {
                     if (confirmReplace) ReplaceDialog()
                     if (transcribing) TranscribeDialog()
                     if (confirmDeleteTranscript) DeleteTranscriptDialog()
+                    editingLine?.let { EditLineDialog(it) }
                 }
             }
         }
@@ -149,9 +158,14 @@ class PlayerActivity : ComponentActivity() {
             p.setDataSource(this, uri)
             p.prepare()
             p.setOnCompletionListener {
-                playing = false
-                previewing = false
-                positionMs = durationMs
+                if (repeat == Repeat.ALL && !previewing) {
+                    seekTo(0)
+                    p.start()
+                } else {
+                    playing = false
+                    previewing = false
+                    positionMs = durationMs
+                }
             }
             player = p
             durationMs = p.duration.toLong().coerceAtLeast(1)
@@ -216,6 +230,10 @@ class PlayerActivity : ComponentActivity() {
     }
 
     private fun previewTick() {
+        // A–B repeat: jump back to A on reaching B.
+        val a = repeatA
+        val b = repeatB
+        if (repeat == Repeat.AB && playing && !previewing && a != null && b != null && b > a && positionMs >= b) seekTo(a)
         if (!previewing || !playing) return
         val start = range.start.toLong()
         val end = range.endInclusive.toLong()
@@ -267,11 +285,11 @@ class PlayerActivity : ComponentActivity() {
                 TextButton(onClick = { finish() }) { Text("Close") }
             }
 
-            Timeline()
-            Row(Modifier.fillMaxWidth()) {
-                Text(formatClock(positionMs), style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-                Text(formatClock(durationMs), style = MaterialTheme.typography.bodySmall)
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(formatTenths(positionMs), style = MaterialTheme.typography.displaySmall)
+                Text(formatTenths(durationMs), style = MaterialTheme.typography.bodySmall)
             }
+            Timeline()
 
             Row(
                 Modifier.fillMaxWidth().padding(vertical = 12.dp),
@@ -284,6 +302,24 @@ class PlayerActivity : ComponentActivity() {
                 }
                 TextButton(onClick = { seekTo(positionMs + SKIP_MS) }) { Text("+10 s") }
                 TextButton(onClick = ::cycleSpeed) { Text(speedLabel(SPEEDS[speedIndex])) }
+            }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = {
+                    repeat = Repeat.entries[(repeat.ordinal + 1) % Repeat.entries.size]
+                    if (repeat != Repeat.AB) {
+                        repeatA = null
+                        repeatB = null
+                    }
+                }) { Text(repeat.label) }
+                if (repeat == Repeat.AB) {
+                    TextButton(onClick = {
+                        repeatA = positionMs
+                        if ((repeatB ?: Long.MAX_VALUE) <= positionMs) repeatB = null
+                    }) { Text("A: " + (repeatA?.let { formatTenths(it) } ?: "set here")) }
+                    TextButton(onClick = { if (positionMs > (repeatA ?: -1)) repeatB = positionMs }) {
+                        Text("B: " + (repeatB?.let { formatTenths(it) } ?: "set here"))
+                    }
+                }
             }
 
             if (editing) EditPanel() else {
@@ -365,6 +401,7 @@ class PlayerActivity : ComponentActivity() {
     }
 
     @Composable
+    @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
     private fun TranscriptPanel() {
         val t = transcript
         if (t == null) {
@@ -387,6 +424,9 @@ class PlayerActivity : ComponentActivity() {
         Row {
             TextButton(onClick = ::shareTranscript) { Text("Share") }
             TextButton(onClick = ::copyTranscript) { Text("Copy") }
+            if (AiHandoff.installed(this@PlayerActivity).isNotEmpty()) {
+                TextButton(onClick = ::summariseWithGemini) { Text("Summarise") }
+            }
             TextButton(onClick = { confirmDeleteTranscript = true }) {
                 Text("Delete", color = MaterialTheme.colorScheme.error)
             }
@@ -408,7 +448,7 @@ class PlayerActivity : ComponentActivity() {
                     Modifier
                         .fillMaxWidth()
                         .then(if (current) Modifier.background(playingColor) else Modifier)
-                        .clickable { seekTo(s.startMs) }
+                        .combinedClickable(onClick = { seekTo(s.startMs) }, onLongClick = { editingLine = s })
                         .padding(vertical = 6.dp, horizontal = 4.dp)
                 ) {
                     marks.forEach {
@@ -443,6 +483,49 @@ class PlayerActivity : ComponentActivity() {
         getSystemService(android.content.ClipboardManager::class.java)
             .setPrimaryClip(android.content.ClipData.newPlainText("Transcript", transcriptText()))
         Toast.makeText(this, "Transcript copied", Toast.LENGTH_SHORT).show()
+    }
+
+    /** Sends the transcript text (not the audio) to Gemini: quicker, smaller, no audio length limit. */
+    private fun summariseWithGemini() {
+        val app = AiHandoff.installed(this).firstOrNull() ?: return
+        val prompt = "Here is a transcript of a recording. Please give a short summary in British English, " +
+            "then a list of action points, saying who is responsible where that's clear. " +
+            "Give it to me as a plain text (.txt) file I can download.\n\n" + transcriptText()
+        getSystemService(android.content.ClipboardManager::class.java)
+            .setPrimaryClip(android.content.ClipData.newPlainText("Summary request", prompt))
+        val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, prompt)
+            .setPackage(app.packageName)
+        runCatching { startActivity(send) }
+            .onSuccess { Toast.makeText(this, "Sent the transcript to Gemini (also copied, in case you need to paste it).", Toast.LENGTH_LONG).show() }
+            .onFailure { Toast.makeText(this, "Couldn't open Gemini. The request is copied: paste it into Gemini.", Toast.LENGTH_LONG).show() }
+    }
+
+    @Composable
+    private fun EditLineDialog(s: TranscriptSegment) {
+        var text by remember(s) { mutableStateOf(s.text) }
+        AlertDialog(
+            onDismissRequest = { editingLine = null },
+            title = { Text("Edit line at ${formatClock(s.startMs)}") },
+            text = {
+                Column {
+                    TextButton(onClick = {
+                        seekTo(s.startMs)
+                        play()
+                    }) { Text("Play this line") }
+                    OutlinedTextField(value = text, onValueChange = { text = it })
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val current = transcript ?: return@TextButton
+                    val updated = current.copy(segments = current.segments.map { if (it === s) it.copy(text = text.trim()) else it })
+                    Transcripts.save(this@PlayerActivity, uri, updated)
+                    transcript = updated
+                    editingLine = null
+                }) { Text("Save") }
+            },
+            dismissButton = { TextButton(onClick = { editingLine = null }) { Text("Cancel") } },
+        )
     }
 
     @Composable
@@ -717,6 +800,9 @@ class PlayerActivity : ComponentActivity() {
         )
     }
 }
+
+/** 00:35.8, or 1:02:03.4 past an hour. */
+private fun formatTenths(ms: Long) = formatClock(ms) + "." + ((ms % 1000) / 100)
 
 private fun formatEstimate(ms: Long): String {
     val s = ms / 1000

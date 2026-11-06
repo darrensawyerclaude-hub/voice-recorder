@@ -175,6 +175,12 @@ Result codes: **Pass**, **Fail** (add a note and the time it happened, so it can
 | T14 | Replace original after a trim/cut on a transcribed recording. | The old transcript is removed (it no longer lines up). | |
 | T15 | Remove downloaded models. | Models are deleted; the next transcription downloads again. | |
 | T16 | Transcribe a 30+ minute recording, unplugged. | Note time taken, battery used and how warm the phone gets. | |
+| T17 | Speed button. | Cycles 1×, 1.25×, 1.5×, 2×, 0.5×, 0.75×. 0.5× is clear, not garbled. | |
+| T18 | Player clock. | Large "00:35.8" with tenths, total length underneath; updates smoothly while playing. | |
+| T19 | Repeat: all. | At the end it starts again from the beginning. | |
+| T20 | Repeat: A–B. Set A at 00:10 and B at 00:20, play. | Loops 00:10–00:20 until you change Repeat. | |
+| T21 | Press and hold a transcript line, correct a word, Save. | The line changes, and stays changed after closing and reopening. "Play this line" plays it. | |
+| T22 | Transcript → Summarise. | Gemini opens with the transcript and the request filled in (or ready to paste). | |
 
 ## 9. Help
 

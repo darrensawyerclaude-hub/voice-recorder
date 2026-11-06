@@ -2,6 +2,7 @@
 
 Ordered by priority. The evidence comes from the review studies in
 [play-store-standalone-scan-2026-11.md](../play-store-standalone-scan-2026-11.md).
+Positioning (6 Nov 2026): Samsung's free preinstalled recorder already has transcripts, speakers and summaries on Galaxy phones, so lead on what it lacks: works on every Android phone, files that are yours, private by default, call pausing, lossless trim, lock-screen bookmarks. Aim testing and marketing at non-Samsung phones first.
 Pricing (decided 6 Nov 2026): one plan, about £1 a month, everything included, no ads.
 Nothing may add a running cost for us. "Cost to run" says whether an item needs a server or paid API.
 
@@ -11,14 +12,17 @@ Nothing may add a running cost for us. "Cost to run" says whether an item needs 
 |---|---|---|---|
 | 1 | Longer and harsher reliability tests (B2 60 min, B6 battery saver, B7 restart) | B1 and B5 passed on the S20 FE; these cover the remaining ways a recording gets cut short | — |
 | 2 | Mic choice (built-in, headset, Bluetooth, USB) and manual gain | Requested, and a Dolby On complaint | None |
-| 3 | Before-launch list (name, ID, icon, privacy policy, Play account, billing) | The app ID can't change after the first upload | — |
+| 3 | Waveform with playhead, and skip silences on playback | Seen in Samsung's recorder; skip silences was requested in reviews | None |
+| 4 | Speaker labels (on-device diarisation via sherpa-onnx) | Biggest visible gap vs Samsung; quality uncertain, test first | None |
+| 5 | Before-launch list (name, ID, icon, privacy policy, Play account, billing) | The app ID can't change after the first upload | — |
 
 ## Later
 
 | Item | Why | Cost to run |
 |---|---|---|
+| Translate transcripts (Google ML Kit, on-device, ~30 MB per language) | Seen in Samsung's recorder | None |
+| Side-by-side layout on tablets and in landscape | Seen in Samsung's recorder | None |
 | Folders or tags | "Naming, folders, search" is in the value list; naming and search are done | None |
-| Skip silence on playback | Requested | None |
 | Choice of save folder for new recordings | Requested. Export can already send copies to any folder | None |
 | Record straight to WAV (lossless) | Musicians; export to WAV only converts the AAC | None |
 | Auto-backup to the user's own Google Drive | People lost recordings when changing phone | None (user's Drive, no server of ours) |
@@ -61,4 +65,6 @@ Nothing may add a running cost for us. "Cost to run" says whether an item needs 
 - Trim and cut out a middle section, frame-exact with no re-encoding; save as copy or replace; bookmarks follow the edit
 - On-device transcription: Quick (Moonshine) or Accurate (Whisper small), downloaded on first use; split at pauses, silence skipped, British spelling; background service with progress; transcript tab with tap-to-jump, search, copy, share; main search covers transcripts
 - Transcribe with an AI app: Gemini, with a British-English transcript prompt incl. bookmarks. ChatGPT and Claude tested and excluded: their apps can't transcribe a shared audio file
+- Player: 0.5× to 2× speed, clock with tenths, repeat (all or A–B)
+- Edit transcript lines; Summarise sends the transcript text to Gemini
 - Instant start: quick settings Record button, home-screen widget, quick record screen over the lock screen (no access to the list)

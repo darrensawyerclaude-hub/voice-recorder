@@ -37,6 +37,24 @@ private fun sections(folder: String) = listOf(
         ),
     ),
     HelpSection(
+        "Bookmarks",
+        listOf(
+            "While recording, tap Bookmark (in the app, on the quick record screen, or in the notification) to mark an important moment. You don't need to unlock the phone or stop.",
+            "When you play the recording, bookmarks show as red marks on the timeline and as a list. Tap one to jump there. Rename them (\"Budget question\") or delete them.",
+            "You can also add a bookmark while listening back: tap Bookmark here.",
+            "Bookmarks are kept by this app. They stay when you rename a recording, but don't travel with a shared or exported copy.",
+        ),
+    ),
+    HelpSection(
+        "Playing, trimming and cutting",
+        listOf(
+            "Tap a recording, then Play. Drag the timeline to move around, use −10 s / +10 s to skip, and tap 1× to change speed (up to 2×).",
+            "Tap Trim / cut. Choose Keep only the selection (trim the ends) or Cut out the selection (remove a middle part), then drag the two handles.",
+            "To cut exactly at a bookmark, tap the bookmark to move there, then Start here or End here. Preview plays the result before you save.",
+            "Save as copy keeps the original and adds a \"(trimmed)\" or \"(cut)\" recording. Replace original changes it permanently. Editing doesn't re-encode, so there's no loss of quality.",
+        ),
+    ),
+    HelpSection(
         "Your files",
         listOf(
             "Recordings are saved to $folder on your phone, as ordinary .aac files that play in any app.",
@@ -48,7 +66,7 @@ private fun sections(folder: String) = listOf(
     HelpSection(
         "Managing recordings",
         listOf(
-            "Tap a recording to show Play, Rename, Share, Open with, Export and Delete. Tap it again to hide them.",
+            "Tap a recording to show Play, Rename, Share, Open with, Export and Delete. Tap it again to hide them. The row shows how many bookmarks it has.",
             "To work with several at once, press and hold one, then tap the others. You can then Share, Export or Delete them together.",
             "Export saves copies to any folder you pick (Downloads, an SD card, Google Drive, a USB stick). M4A opens on iPhones, Macs and Windows as well as Android. WAV is about 10 times bigger but suits editing software. Your originals stay where they are.",
         ),

@@ -131,7 +131,30 @@ Result codes: **Pass**, **Fail** (add a note and the time it happened, so it can
 | Q12 | Samsung: Settings → Lock screen → Shortcuts → set one corner to Recorder. Swipe it from the lock screen. | Note what happens (it may open the main app and ask to unlock; the quick settings button is the reliable lock-screen route). | |
 | Q13 | Fresh install, microphone not yet allowed, tap the widget. | The quick screen says to open the app once and allow the microphone. No crash. | |
 
-## 8. Help
+## 8. Playback, bookmarks, trim and cut
+
+| ID | Steps | Expected | Result |
+|---|---|---|---|
+| K1 | While recording, tap Bookmark in the app 3 times about 10 s apart. | Shows "3 · last at 00:2x". The notification also says "3 bookmarks · last at …". | |
+| K2 | Record with the phone locked; tap Bookmark in the notification. | Bookmark is added without unlocking. | |
+| K3 | On the quick record screen, tap "Bookmark this moment". | Count goes up. | |
+| K4 | Stop. Look at the row in the list. | It shows "3 bookmarks". | |
+| K5 | Tap the recording, then Play. | Player screen opens: timeline with red bookmark marks, elapsed / total time, Play, −10 s, +10 s, 1×. | |
+| K6 | Play, drag the timeline, skip ±10 s. | Moves accurately; times update. | |
+| K7 | Tap 1× repeatedly while playing. | Cycles 1.25×, 1.5×, 2×, 0.75×, 1×, and the speed changes without the pitch going chipmunk. | |
+| K8 | Tap a bookmark in the list. | Jumps to that point (within a fraction of a second of where it was marked). | |
+| K9 | Rename a bookmark, delete another. | Both stick after closing and reopening the player. | |
+| K10 | Tap "Bookmark here" while playing. | A new bookmark appears at the current time. | |
+| K11 | Rename the recording from the list, reopen the player. | Bookmarks are still there. | |
+| K12 | Trim / cut → Keep only the selection. Drag the handles to keep 00:05–00:15. Preview. | Plays 00:05 to 00:15 and stops. | |
+| K13 | Save as copy. | "(trimmed)" copy appears in the list, about 10 s long. Original unchanged. Bookmarks inside the kept part are on the copy, shifted to match. | |
+| K14 | Trim / cut → Cut out the selection, select 00:05–00:15, Preview. | Plays from about 00:02, skips from 00:05 straight to 00:15, stops about 3 s later. | |
+| K15 | Save as copy. | "(cut)" copy is 10 s shorter, no click or glitch at the join. Bookmarks after the cut are moved 10 s earlier; ones inside it are gone. | |
+| K16 | Tap a bookmark, then Start here; tap another, then End here. | The selection snaps to the two bookmarks. | |
+| K17 | Replace original. | Asks to confirm first. Afterwards the recording is shorter and the original audio outside the selection is gone. | |
+| K18 | Delete a recording that had bookmarks, then make a new one. | The new one starts with no bookmarks. | |
+
+## 9. Help
 
 | ID | Steps | Expected | Result |
 |---|---|---|---|
@@ -141,7 +164,7 @@ Result codes: **Pass**, **Fail** (add a note and the time it happened, so it can
 | H4 | Tap "Open Recorder's settings". | The phone's settings page for Recorder opens. | |
 | H5 | Open Help while recording. | Recording carries on. Closing Help shows the timer still running. | |
 
-## 9. Phones to cover before launch
+## 10. Phones to cover before launch
 
 Background recording behaves differently by brand, so tick off at least one phone from each:
 

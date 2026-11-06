@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
@@ -99,7 +98,7 @@ private enum class SortOrder(val label: String) {
 class MainActivity : ComponentActivity() {
 
     private var recordings by mutableStateOf(emptyList<Recording>())
-    private var playingUri by mutableStateOf<Uri?>(null)
+    private var bookmarkCounts by mutableStateOf(emptyMap<String, Int>())
     private var nameRequest by mutableStateOf<NameRequest?>(null)
     private var deleteRequest by mutableStateOf<List<Recording>?>(null)
     private var expandedUri by mutableStateOf<Uri?>(null)
@@ -115,7 +114,6 @@ class MainActivity : ComponentActivity() {
     private var query by mutableStateOf("")
     private var sortOrder by mutableStateOf(SortOrder.NEWEST)
     private var showHelp by mutableStateOf(false)
-    private var player: MediaPlayer? = null
 
     private val prefs by lazy { getSharedPreferences("ui", MODE_PRIVATE) }
 
@@ -185,17 +183,12 @@ class MainActivity : ComponentActivity() {
         refresh()
     }
 
-    override fun onStop() {
-        super.onStop()
-        stopPlayback()
-    }
-
     private fun refresh() {
         recordings = Recordings.list(this)
+        bookmarkCounts = Bookmarks.counts(this)
     }
 
     private fun startRecording() {
-        stopPlayback()
         val needed = buildList {
             add(Manifest.permission.RECORD_AUDIO)
             if (android.os.Build.VERSION.SDK_INT >= 33) add(Manifest.permission.POST_NOTIFICATIONS)
@@ -207,27 +200,6 @@ class MainActivity : ComponentActivity() {
         } else {
             permissionLauncher.launch(needed.toTypedArray())
         }
-    }
-
-    private fun togglePlay(rec: Recording) {
-        if (playingUri == rec.uri) {
-            stopPlayback()
-            return
-        }
-        stopPlayback()
-        player = MediaPlayer().apply {
-            setDataSource(this@MainActivity, rec.uri)
-            setOnCompletionListener { stopPlayback() }
-            prepare()
-            start()
-        }
-        playingUri = rec.uri
-    }
-
-    private fun stopPlayback() {
-        player?.release()
-        player = null
-        playingUri = null
     }
 
     /** Shares as M4A. Above typical email limits, first offers a smaller speech-quality copy. */
@@ -322,7 +294,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun delete(recs: List<Recording>) {
-        if (recs.any { it.uri == playingUri }) stopPlayback()
         recs.forEach { Recordings.delete(this, it.uri) }
         selected = emptySet()
         refresh()
@@ -553,6 +524,20 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+            if (status.state != RecState.IDLE) {
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextButton(onClick = { RecorderService.send(this@MainActivity, RecorderService.ACTION_BOOKMARK) }) {
+                        Text("Bookmark")
+                    }
+                    status.lastBookmarkMs?.let {
+                        Text("${status.bookmarkCount} · last at ${formatDuration(it)}", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
             val callLine = when {
                 status.pausedForCall -> "Paused for a call. Recording resumes when the call ends."
                 status.state != RecState.IDLE -> callSummary(status.callPauses)?.let { "$it · resumed" }
@@ -598,7 +583,7 @@ class MainActivity : ComponentActivity() {
                 items(shown, key = { it.uri.toString() }) { rec ->
                     RecordingRow(
                         rec,
-                        isPlaying = playingUri == rec.uri,
+                        bookmarkCount = Bookmarks.countFor(bookmarkCounts, rec.uri),
                         isActive = rec.uri == activeUri,
                         isExpanded = expandedUri == rec.uri,
                         isSelected = rec.uri in selected,
@@ -614,7 +599,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun RecordingRow(
         rec: Recording,
-        isPlaying: Boolean,
+        bookmarkCount: Int,
         isActive: Boolean,
         isExpanded: Boolean,
         isSelected: Boolean,
@@ -650,21 +635,21 @@ class MainActivity : ComponentActivity() {
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.weight(1f),
                 )
-                when {
-                    isActive -> Text("Recording…", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                    isPlaying -> Text("Playing", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
+                if (isActive) {
+                    Text("Recording…", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
             }
             Text(
                 DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
                     .format(Date(rec.dateAddedSec * 1000)) + " · " +
                     formatDuration(rec.sizeBytes * 8 * 1000 / ENCODE_BITRATE) + " · " +
-                    Formatter.formatShortFileSize(this@MainActivity, rec.sizeBytes),
+                    Formatter.formatShortFileSize(this@MainActivity, rec.sizeBytes) +
+                    if (bookmarkCount > 0) " · ${plural(bookmarkCount, "bookmark")}" else "",
                 style = MaterialTheme.typography.bodySmall,
             )
             if (isExpanded && !isActive && !selecting) {
                 FlowRow {
-                    TextButton(onClick = { togglePlay(rec) }) { Text(if (isPlaying) "Stop" else "Play") }
+                    TextButton(onClick = { startActivity(PlayerActivity.intent(this@MainActivity, rec)) }) { Text("Play") }
                     TextButton(onClick = { nameRequest = NameRequest(rec.uri, rec.name, isNew = false) }) { Text("Rename") }
                     TextButton(onClick = { share(listOf(rec)) }) { Text("Share") }
                     TextButton(onClick = { openWith(rec) }) { Text("Open with") }

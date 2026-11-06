@@ -9,15 +9,14 @@ Free means it's part of the core that stays free forever. Paid means it goes in 
 | # | Item | Why | Tier |
 |---|---|---|---|
 | 1 | Longer and harsher reliability tests (B2 60 min, B6 battery saver, B7 restart) | B1 and B5 passed on the S20 FE; these cover the remaining ways a recording gets cut short | — |
-| 2 | Trim, and cut out a middle section | Most-requested edit in positive reviews | Free |
-| 3 
+| 2 | Mic choice (built-in, headset, Bluetooth, USB) and manual gain | Requested, and a Dolby On complaint | Free |
+| 3 | Before-launch list (name, ID, icon, privacy policy, Play account) | The app ID can't change after the first upload | — |
+
 ## Later
 
 | Item | Why | Tier |
 |---|---|---|
-| Mic choice (built-in, headset, Bluetooth, USB) and manual gain | Requested, and a Dolby On complaint | Free |
 | Folders or tags | "Naming, folders, search" is in the value list; naming and search are done | Free |
-| Bookmarks during recording | Requested | Free |
 | Skip silence on playback | Requested | Free |
 | Choice of save folder for new recordings | Requested. Export can already send copies to any folder | Free |
 | Record straight to WAV (lossless) | Musicians; export to WAV only converts the AAC | Free |
@@ -32,7 +31,7 @@ Free means it's part of the core that stays free forever. Paid means it goes in 
 - Proper app icon
 - Google Play developer account, and an organisation account if going the limited-company route
 - Privacy policy and Play data-safety form
-- Test on a Pixel, a Xiaomi and an older phone (test sheet section 9)
+- Test on a Pixel, a Xiaomi and an older phone (test sheet section 10)
 
 ## Done
 
@@ -52,4 +51,7 @@ Free means it's part of the core that stays free forever. Paid means it goes in 
 - Multi-select (long press): share, export or delete several at once
 - Export as M4A (default), AAC or WAV to any folder (Downloads, SD card, Drive, USB) via the system folder picker
 - Share as M4A for compatibility; offers a smaller speech-quality copy over 20 MB (email limits)
+- Playback screen: timeline, ±10 s, speed 0.75–2×
+- Bookmarks while recording (app, quick screen, notification) and while playing; rename, delete, jump
+- Trim and cut out a middle section, frame-exact with no re-encoding; save as copy or replace; bookmarks follow the edit
 - Instant start: quick settings Record button, home-screen widget, quick record screen over the lock screen (no access to the list)

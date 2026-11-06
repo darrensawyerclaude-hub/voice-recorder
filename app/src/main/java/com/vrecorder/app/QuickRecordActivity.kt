@@ -163,6 +163,20 @@ class QuickRecordActivity : ComponentActivity() {
                     }
                 }
             }
+            if (status.state != RecState.IDLE) {
+                Spacer(Modifier.height(20.dp))
+                OutlinedButton(
+                    onClick = { RecorderService.send(this@QuickRecordActivity, RecorderService.ACTION_BOOKMARK) },
+                    modifier = Modifier.fillMaxWidth(0.7f).height(56.dp),
+                ) { Text("Bookmark this moment") }
+                status.lastBookmarkMs?.let {
+                    Text(
+                        "${status.bookmarkCount} bookmarked · last at ${formatClock(it)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
+                }
+            }
             Spacer(Modifier.height(24.dp))
             Text(
                 "Recording carries on if you leave this screen. You can name it next time you open the app.",

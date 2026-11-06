@@ -57,6 +57,9 @@ data class RecStatus(
     val pausedForCall: Boolean = false,
     // Calls that paused this recording and have ended, oldest first.
     val callPauses: List<CallPause> = emptyList(),
+    // Bookmarks added to this recording so far, and where the latest one is (ms into the file).
+    val bookmarkCount: Int = 0,
+    val lastBookmarkMs: Long? = null,
 ) {
     fun elapsedMs(now: Long = SystemClock.elapsedRealtime()): Long =
         if (state == RecState.RECORDING) elapsedBeforeMs + (now - segmentStartedAt) else elapsedBeforeMs
@@ -73,6 +76,7 @@ class RecorderService : Service() {
         const val ACTION_PAUSE = "pause"
         const val ACTION_RESUME = "resume"
         const val ACTION_STOP = "stop"
+        const val ACTION_BOOKMARK = "bookmark"
         private const val CHANNEL_ID = "recording"
         private const val NOTIFICATION_ID = 1
         private const val CALL_POLL_MS = 500L
@@ -142,6 +146,7 @@ class RecorderService : Service() {
             ACTION_PAUSE -> pause()
             ACTION_RESUME -> resume()
             ACTION_STOP -> stop()
+            ACTION_BOOKMARK -> bookmark()
             // Restarted by the system after being killed: the old recording is already safe on disk.
             null -> if (engine == null) stopSelf()
         }
@@ -180,6 +185,17 @@ class RecorderService : Service() {
         engine?.paused = true
         if (forCall) callPauseStartedAt = System.currentTimeMillis()
         publish(s.copy(state = RecState.PAUSED, elapsedBeforeMs = s.elapsedMs(), pausedForCall = forCall))
+        updateNotification()
+    }
+
+    /** Marks the current point. Elapsed time excludes pauses, so it matches the position in the file. */
+    private fun bookmark() {
+        val uri = outputUri ?: return
+        val s = _status.value
+        if (s.state == RecState.IDLE) return
+        val at = s.elapsedMs()
+        Bookmarks.add(this, uri, at)
+        publish(s.copy(bookmarkCount = s.bookmarkCount + 1, lastBookmarkMs = at))
         updateNotification()
     }
 
@@ -263,6 +279,8 @@ class RecorderService : Service() {
                 when {
                     s.pausedForCall -> setContentText("Resumes automatically when the call ends")
                     s.callPauses.isNotEmpty() -> setContentText("${callSummary(s.callPauses)} · resumed")
+                    s.lastBookmarkMs != null ->
+                        setContentText("${s.bookmarkCount} bookmark${if (s.bookmarkCount == 1) "" else "s"} · last at ${formatClock(s.lastBookmarkMs)}")
                 }
             }
             .setContentIntent(open)
@@ -271,6 +289,7 @@ class RecorderService : Service() {
             .setWhen(System.currentTimeMillis() - s.elapsedMs())
         if (s.state == RecState.RECORDING) builder.addAction(action("Pause", ACTION_PAUSE, 1))
         if (s.state == RecState.PAUSED) builder.addAction(action("Resume", ACTION_RESUME, 2))
+        builder.addAction(action("Bookmark", ACTION_BOOKMARK, 4))
         builder.addAction(action("Stop", ACTION_STOP, 3))
         return builder.build()
     }

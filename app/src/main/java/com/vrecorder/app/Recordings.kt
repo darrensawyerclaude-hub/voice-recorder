@@ -42,10 +42,10 @@ object Recordings {
      * Creates the file up front and visible (not IS_PENDING), so a crash mid-recording
      * leaves a playable partial file rather than a hidden one that the system purges.
      */
-    fun create(context: Context): Uri? {
+    fun create(context: Context, baseName: String? = null): Uri? {
         val stamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.UK).format(Date())
         val values = ContentValues().apply {
-            put(MediaStore.Audio.Media.DISPLAY_NAME, "Recording_$stamp.aac")
+            put(MediaStore.Audio.Media.DISPLAY_NAME, "${baseName ?: "Recording_$stamp"}.aac")
             put(MediaStore.Audio.Media.MIME_TYPE, MIME)
             put(MediaStore.Audio.Media.RELATIVE_PATH, relativePath)
             // Tags the file as a voice recording (not "in progress") so media apps can tell it from music.
@@ -102,5 +102,6 @@ object Recordings {
 
     fun delete(context: Context, uri: Uri) {
         context.contentResolver.delete(uri, null, null)
+        Bookmarks.remove(context, uri)
     }
 }
